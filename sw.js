@@ -1,8 +1,8 @@
 // Service worker: يجلب أحدث نسخة أولاً متى توفّر الإنترنت، ويستعمل النسخة المحفوظة دون اتصال
-const VERSION = "csm-v24";
+const VERSION = "csm-v25";
 const SHELL = [
   "./", "./index.html", "./app.js", "./firebase-config.js", "./manifest.webmanifest",
-  "./logo.png","./mali-flag.svg","./lib/qrcode.js", "./mosque.jpg",
+  "./logo.png","./mali-flag.svg","./lib/qrcode.js", "./mosque.jpg", "./gate.jpg",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/favicon.png"
 ];
 const RUNTIME_HOSTS = ["www.gstatic.com", "fonts.googleapis.com", "fonts.gstatic.com", "unpkg.com", "cdn.jsdelivr.net"];

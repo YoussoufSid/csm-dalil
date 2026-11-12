@@ -407,6 +407,15 @@ Object.assign(S,{
 
 /* ================= شاشة الترحيب ================= */
 let splashShown=false,_splashed=false;
+// بوابة الدخول بعد الدعاء: ﴿ادخلوها بسلام آمنين﴾ ثم تنفتح البوابة إلى التطبيق
+function gate(){return new Promise(res=>{
+  const g=document.createElement("div");g.id="gate";
+  g.innerHTML=`<div class="g-img"></div><div class="g-shade"></div>
+   <div class="g-in"><div class="g-ayah">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="g-ref">${esc(L(["سورة الحجر، الآية ٤٦","Sourate Al-Hijr, verset 46"]))}</div>
+   <button class="g-go">${t("enterApp")}</button></div>`;
+  document.body.appendChild(g);
+  const go=()=>{if(g._c)return;g._c=1;g.classList.add("open");setTimeout(()=>{g.remove();res()},1100)};
+  g.querySelector(".g-go").onclick=go;g.querySelector(".g-img").onclick=go;setTimeout(go,7000)})}
 function splash(name){
   if(splashShown)return Promise.resolve(); splashShown=true;
   try{if(sessionStorage.getItem("csm-splash"))return Promise.resolve();sessionStorage.setItem("csm-splash","1")}catch(e){}
@@ -425,7 +434,7 @@ function splash(name){
       <button class="sp-go">${t("enterApp")}</button>
      </div>`;
     document.body.appendChild(d);
-    const close=()=>{if(d._c)return;d._c=1;d.classList.add("out");setTimeout(()=>{d.remove();res()},650)};
+    const close=()=>{if(d._c)return;d._c=1;d.classList.add("out");setTimeout(()=>{d.remove();gate().then(res)},650)};
     d.querySelector(".sp-go").onclick=close;
     setTimeout(close,9000);
   });
@@ -1969,7 +1978,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="24";
+const APP_VERSION="25";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
