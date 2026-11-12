@@ -1565,11 +1565,13 @@ function jsonImportBox(){return isAdmin()?`<div class="sec"><h2>${t("jiT")}</h2>
 const REG_CODE={"مقاطعة باماكو":"BKO","كاي":"KYS","كوليكورو":"KLK","سيكاسو":"SKS","سيغو":"SGU","موبتي":"MPT","تمبكتو":"TBK","غاو":"GAO","كيدال":"KDL","تاوديني":"TDN","ميناكا":"MNK","بوغوني":"BGN","ديويلا":"DLA","نيورو الساحل":"NRO","كيتا":"KTA","كوتيالا":"KTL","نارا":"NRA","بانديغارا":"BDG","سان":"SAN","دوينتزا":"DTZ"};
 const CAT_CODE={mosques:"M",schools:"E",centers:"C",duat:"D",assoc:"A",media:"P",offices:"B"};
 // المساجد ترقيم وطني واحد متسلسل (رمز الإقليم للدلالة فقط)، وبقية الأصناف ترقيم داخل كل إقليم
-const codeKey=(c,x)=>c==="mosques"?"M-ALL":(CAT_CODE[c]||"X")+"-"+(REG_CODE[x.region]||"ML");
+// المساجد: 1 = المقر، ثم مساجد باماكو (2…500)، ثم الأقاليم من 501 فما بعده
+const REG_START=501;
+const codeKey=(c,x)=>c==="mosques"?(x.region===BAMAKO?"M-BKO":"M-ALL"):(CAT_CODE[c]||"X")+"-"+(REG_CODE[x.region]||"ML");
 const codeOf=(k,n,x)=>{const [cc,rr]=k.split("-");return (rr==="ALL"?(REG_CODE[x&&x.region]||"ML"):rr)+"-"+cc+"-"+String(n).padStart(4,"0")};
 const codeTag=x=>x&&x.code?`<span class="code" dir="ltr">🔢 ${esc(x.code)}</span>`:"";
 // الرقم الأول محجوز لجامع ماغامبا دومبيا، مقر تجمع أهل السنة والجماعة في مالي: BKO-M-0001
-const HQ_KEY="M-ALL",HQ_CODE="BKO-M-0001";
+const HQ_KEY="M-BKO",HQ_CODE="BKO-M-0001";
 const normAr=v=>String(v||"").replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").toLowerCase();
 const isHQ=x=>{const n=normAr(x.name);return /(ماغامبا|مغامبا|ماقامبا|ماغمبا|magh?amba)/.test(n)};
 let _numBusy=false,_numFail=0;
@@ -1586,7 +1588,8 @@ async function autoNumber(){
         if(hq&&!data.mosques.some(x=>x.code===HQ_CODE)){hq[1].code=HQ_CODE;await store.patch("mosques",hq[1].id,{code:HQ_CODE});done++;g=g.filter(z=>z!==hq)}
         if(!g.length)continue}
       // للمساجد: لا يقل التسلسل عن أكبر رقم مستعمل، فلا يتكرر رقم أبدا
-      const base=k==="M-ALL"?Math.max(1,...data.mosques.map(x=>parseInt(String(x.code||"").slice(-4))||0)):0;
+      const mx=f=>Math.max(0,...data.mosques.filter(f).map(x=>parseInt(String(x.code||"").slice(-4))||0));
+      const base=k==="M-BKO"?Math.max(1,mx(x=>x.region===BAMAKO)):k==="M-ALL"?Math.max(REG_START-1,mx(x=>x.region!==BAMAKO)):0;
       const start=await store.alloc(k,g.length,base);
       for(let i=0;i<g.length;i++){const [c,x]=g[i];const code=codeOf(k,start+i,x);x.code=code;await store.patch(c,x.id,{code});done++}
     }
@@ -1607,17 +1610,21 @@ function mosqueOrder(){
   const ci=x=>{if(x.region!==BAMAKO&&x.commune&&String(x.region).startsWith(x.commune))return -1;const list=x.region===BAMAKO?DIRECTORATES:(CERCLES[x.region]||[]);const i=list.indexOf(x.commune);return i<0?999:i};
   return [...data.mosques].sort((a,b)=>(isHQ(b)-isHQ(a))||ri(a.region)-ri(b.region)||ci(a)-ci(b)||String(a.createdAt||"").localeCompare(String(b.createdAt||""))||String(a.name).localeCompare(String(b.name)))}
 APP.renumM=async()=>{if(!isAdmin())return;
-  const list=mosqueOrder();if(!list.length)return;const hasHQ=list[0]&&isHQ(list[0]);
+  const list=mosqueOrder();if(!list.length)return;
   if(!confirm(t("rnQ",{n:fmt(list.length)})))return;
-  _numBusy=true;let n=0,ch=0;
-  try{const total=list.length+(hasHQ?0:1);
-    try{await store.alloc("M-ALL",0,total)}catch(e){} // يرفع العدّاد إلى العدد الكلي حتى تأخذ المساجد الجديدة ما بعده
-    for(let i=0;i<list.length;i++){const x=list[i],num=hasHQ?i+1:i+2,code=codeOf("M-ALL",num,x);n++;
-      if(x.code!==code){x.code=code;await store.patch("mosques",x.id,{code});ch++}}
-    logAct("edit","settings","",`renumber mosques ${ch}/${n}`,null);toast(t("rnDone",{n:fmt(ch)}))}
+  _numBusy=true;let ch=0;
+  try{const bko=list.filter(x=>x.region===BAMAKO&&!isHQ(x)),reg=list.filter(x=>x.region!==BAMAKO),hq=list.find(isHQ);
+    const regStart=Math.max(REG_START,bko.length+2),plan=[];
+    if(hq)plan.push([hq,"M-BKO",1]);
+    bko.forEach((x,i)=>plan.push([x,"M-BKO",i+2]));
+    reg.forEach((x,i)=>plan.push([x,"M-ALL",regStart+i]));
+    try{await store.alloc("M-BKO",0,bko.length+1)}catch(e){}
+    try{await store.alloc("M-ALL",0,regStart-1+reg.length)}catch(e){}
+    for(const [x,k,n] of plan){const code=codeOf(k,n,x);if(x.code!==code){x.code=code;await store.patch("mosques",x.id,{code});ch++}}
+    logAct("edit","settings","",`renumber mosques ${ch}/${plan.length}`,null);toast(t("rnDone",{n:fmt(ch)}))}
   catch(e){toast(errMsg(e))}finally{_numBusy=false;render()}};
 function renumBox(){return `<div class="sec"><h2>🔢 ${t("rnT")}</h2><div class="hint">${t("rnHint")}</div><button class="bp" style="margin-top:8px" onclick="APP.renumM()">${t("rnB")}</button></div>`}
-Object.assign(S,{rnT:["إعادة ترقيم المساجد","Renuméroter les mosquées"],rnHint:["ترقيم وطني واحد: 1 جامع ماغامبا دومبيا (مقر التجمع)، ثم مساجد المديرية الأولى فالثانية… ثم بقية باماكو، ثم الأقاليم بترتيبها (كاي، كوليكورو، سيكاسو، سيغو…)، وداخل كل إقليم حسب الدوائر. المساجد التي تُضاف بعدها تأخذ الأرقام التالية، ويمكن إعادة الترقيم متى شئت.","Numérotation nationale unique : 1 = Mosquée Maghamba Doumbia, puis les directions de Bamako, puis les régions dans l'ordre."],
+Object.assign(S,{rnT:["إعادة ترقيم المساجد","Renuméroter les mosquées"],rnHint:["رقم 1 دائما لجامع ماغامبا دومبيا (مقر التجمع)، ثم مساجد باماكو من 2 بترتيب المديريات (الأولى فالثانية…)، ثم الأقاليم من 501 بترتيبها (كاي، كوليكورو، سيكاسو، سيغو…)، وداخل كل إقليم حسب الدوائر. المسجد الجديد في باماكو يأخذ الرقم التالي لمساجد باماكو، وفي الأقاليم التالي لمساجد الأقاليم. ويمكن إعادة الترقيم متى شئت.","Numérotation nationale unique : 1 = Mosquée Maghamba Doumbia, puis les directions de Bamako, puis les régions dans l'ordre."],
  rnB:["🔢 إعادة الترقيم الآن","🔢 Renuméroter maintenant"],rnQ:["إعادة ترقيم {n} مسجدا؟ ستتغير أرقامها الحالية.","Renuméroter {n} mosquées ?"],rnDone:["✅ أُعيد ترقيم {n} مسجدا","✅ {n} mosquée(s) renumérotée(s)"]});
 
 /* ================= اللصق المباشر =================
@@ -1962,7 +1969,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="23";
+const APP_VERSION="24";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
