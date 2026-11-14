@@ -594,7 +594,7 @@ function renderWaiting(){
 }
 
 /* ================= الإطار ================= */
-const TITLES={reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
+const TITLES={gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
 function renderSide(){
   const pu=users.filter(u=>u.role==="pending").length;
   const a=(k,ic,l,extra="")=>`<a href="#${k}" class="${view===k||(k==="regions"&&view.startsWith("region/"))||(k==="news"&&view.startsWith("news/"))?"on":""}"><span class="ic">${ic}</span>${l}${extra}</a>`;
@@ -602,7 +602,7 @@ function renderSide(){
   if(canOffices())h+=`<div class="grp">${t("gOrg")}</div>`+a("offices",CATS.offices.ic,cl("offices"),`<span class="cnt">${fmt(data.offices.length)}</span>`)+(offAll()?"":`<div class="hint" style="padding:0 16px 6px">🔒 ${t("offScope",{r:tv(me.region)})}</div>`);
   h+=`<div class="grp">${t("gDir")}</div>`+ORDER.filter(c=>c!=="offices").map(c=>a(c,CATS[c].ic,cl(c),`<span class="cnt">${fmt(data[c].length)}</span>`)).join("");
   h+=`<div class="grp">${t("gBrowse")}</div>`+a("map","📍",t("map"))+a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:"")+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav"));
-  h+=`<div class="grp">${t("gAdmin")}</div>`+a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("import","📥",t("import")):"")+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:""):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):"");
+  h+=`<div class="grp">${t("gAdmin")}</div>`+a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("import","📥",t("import")):"")+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):"");
   $("#nav").innerHTML=h;
   const rl=me.role==="guest"?t("rGuest"):me.owner?"👑 "+t("ownerL"):isAdmin()?t("rAdmin"):isRegAdmin()?"🛡️ "+L(ROLES.regadmin)+" · "+tv(me.region||""):canWrite()?t("rContrib"):t("rViewer");
   $("#who").innerHTML=`<b>${esc(me.name||"")}</b>${rl}`;
@@ -829,7 +829,7 @@ APP.bulkVerify=async c=>{const ids=(window._lastRows||[]).filter(x=>x.status!=="
   logAct("verify",c,"",n+" × "+cl(c),null);toast(t("bvDone",{n:fmt(n)}))};
 APP.goPending=c=>{const go=()=>{filt.status="pending";filt.region="";filt.arrond="";filt.commune="";filt.city="";render()};if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
 function render(){
-  syncBadge();document.body.classList.toggle("pc",view.startsWith("cardv/")||view.startsWith("cardsp/"));document.body.classList.toggle("pl",view.startsWith("print/"));
+  syncBadge();document.body.classList.toggle("pc",view.startsWith("cardv/")||view.startsWith("cardsp/"));document.body.classList.toggle("pl",view.startsWith("print/")||view==="gaps");
   if(view.startsWith("verify/")&&store){renderVerify(view.slice(7));return}
   if(!me)return;
   if(!canRead()){renderWaiting();return}
@@ -844,7 +844,7 @@ function render(){
   if(view.startsWith("cardsp/")){const k=view.slice(7);main.innerHTML=renderCardsPrint(k);afterCardsPrint(k);return}
   if(view.startsWith("cardv/")){const id=view.slice(6);main.innerHTML=renderCardView(id);afterCardView(id);return}
   if(view.startsWith("card/")){const[,c,id]=view.split("/");main.innerHTML=renderCard(c,id);afterCard(c,id);return}
-  const R={reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
+  const R={gaps:renderGaps,reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
   const body=view.startsWith("news/")?renderNews(view.slice(5)):view.startsWith("region/")?renderRegion(+view.split("/")[1],view.split("/").slice(2).join("/")||undefined):R[view]?R[view]():CATS[view]?renderList(view):renderHome();
   main.innerHTML=banner()+body;
   if(view==="map")afterMap();
@@ -1261,7 +1261,7 @@ function renderSettings(){
    <label style="margin-top:8px">${t("region")}</label><select id="s_reg" onchange="APP.showCommunes(this.value)">${REGIONS.filter(r=>r!==BAMAKO).map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select>
    <textarea id="s_comm" rows="7" style="margin-top:8px">${esc(officialCommunes(REGIONS[1]).join("\n"))}</textarea>
    <button class="bp" style="margin-top:8px" onclick="APP.saveCommunes()">${t("saveB")}</button></div>
-  ${renumBox()}${arrBox()}${unifyBox()}${sigBox()}
+  ${backupBox()}${renumBox()}${arrBox()}${unifyBox()}${sigBox()}
   <div class="sec"><h2>💾 ${t("backupT")}</h2><div class="hint">${t("backupHint")}</div><button class="bp" style="margin-top:10px" onclick="APP.backup()">${t("backupBtn")}</button></div>`;
 }
 APP.saveSite=()=>{const o={};["about","phone","whatsapp","email","facebook","address","presName","cardYears"].forEach(k=>o[k]=$("#s_"+k).value.trim());store.saveConfig("site",o);toast(t("saved"))};
@@ -2140,6 +2140,106 @@ function renderPrivacy(){
    ["🔐 الأمان","حسابات بصلاحيات، وسجل لكل تعديل، وقواعد حماية في الخادم، ونسخ احتياطية."],
    ["⚖️ الإطار القانوني","يراعي المشروع مبادئ القانون المالي رقم 2013-015 لحماية المعطيات ذات الطابع الشخصي (الغرض والدقة والأمان واحترام الخصوصية). والنص يُراجَع مع مختص قانوني قبل الاعتماد النهائي."]];
   return `<div class="sec"><h2>🔒 ${t("prvT")}</h2>${P.map(([h,b])=>`<div class="prv"><b>${h}</b><p>${esc(b)}</p></div>`).join("")}</div>`}
+/* ====== نسخة احتياطية كاملة واستعادتها ====== */
+Object.assign(S,{
+ bkT:["النسخة الاحتياطية","Sauvegarde"],
+ bkInfo:["ينزّل كل بيانات الدليل (المؤسسات، الأرقام، البطاقات، الأخبار، الإعدادات) في ملف واحد تحفظه في مكان آمن. يُنصح بنسخة كل أسبوع.","Télécharge toutes les données (fiches, numéros, cartes, actualités, réglages) dans un seul fichier. Une sauvegarde par semaine est conseillée."],
+ bkPh:["مع الصور (أثقل حجماً وأبطأ)","Avec les photos (plus lourd)"],
+ bkB:["💾 نسخة احتياطية الآن","💾 Sauvegarder maintenant"],
+ bkR:["♻️ استعادة من نسخة","♻️ Restaurer une sauvegarde"],
+ bkLast:["آخر نسخة: {d}","Dernière sauvegarde : {d}"],bkNever:["لم تؤخذ نسخة بعد","Aucune sauvegarde"],
+ bkWork:["جارٍ تجميع البيانات…","Préparation…"],
+ bkDone:["✅ نُزّلت النسخة: {n} سجل","✅ Sauvegarde : {n} éléments"],
+ bkBad:["هذا الملف ليس نسخة احتياطية للدليل","Ce fichier n'est pas une sauvegarde de l'annuaire"],
+ bkQ:["ستُستعاد {n} سجلاً وتحلّ محل ما يحمل الرقم نفسه. متابعة؟","{n} éléments seront restaurés et remplaceront ceux ayant le même identifiant. Continuer ?"],
+ bkRun:["جارٍ الاستعادة… {i}/{n}","Restauration… {i}/{n}"],
+ bkRDone:["✅ اكتملت الاستعادة: {n} سجل","✅ Restauration terminée : {n} éléments"],
+ bkRem:["💾 {d} — لا توجد نسخة احتياطية حديثة.","💾 {d} — pas de sauvegarde récente."],
+ bkRemNow:["نسخ الآن","Sauvegarder"],bkDays:["منذ {n} يوماً","depuis {n} jours"],bkNone:["لا نسخة بعد","aucune sauvegarde"]
+});
+const bkDaysAgo=()=>{const t0=ls.get("csm-lastbackup",0);return t0?Math.floor((Date.now()-t0)/864e5):null};
+function backupBox(){
+  if(!isAdmin())return "";
+  const d=ls.get("csm-lastbackup",0);
+  return `<div class="card"><h3>💾 ${t("bkT")}</h3><div class="hint">${t("bkInfo")}</div>
+   <div class="hint"><b>${d?t("bkLast",{d:dfmt(new Date(d).toISOString())}):t("bkNever")}</b></div>
+   <label class="chk"><input type="checkbox" id="bk_ph"> ${t("bkPh")}</label>
+   <div class="tools"><button class="bp" onclick="APP.backup()">${t("bkB")}</button>
+   <label class="bs btnl" style="cursor:pointer">${t("bkR")}<input type="file" accept=".json,application/json" hidden onchange="APP.restore(this)"></label></div></div>`}
+APP.backup=async()=>{
+  if(!isAdmin())return;
+  const withPh=!!($("#bk_ph")&&$("#bk_ph").checked);toast(t("bkWork"));
+  const out={app:"csm-dalil",v:APP_VERSION,at:new Date().toISOString(),data:{},phones:{...phones},cards:cards.map(k=>({...k})),news:news.map(k=>({...k})),
+    config:{site:CONFIG.site||{},lists:CONFIG.lists||{}},photos:{}};
+  let n=0;ALLC.forEach(c=>{out.data[c]=(data[c]||[]).map(x=>({...x}));n+=out.data[c].length});
+  n+=out.cards.length+out.news.length;
+  if(withPh){
+    const keys=[];ALLC.forEach(c=>data[c].forEach(x=>{if(x.hasPhoto)keys.push(pkey(c,x.id))}));cards.forEach(k=>{if(k.hasPhoto)keys.push("cards__"+k.id)});keys.push("site__sig","site__stamp");
+    for(const k of keys){try{const d=await store.getPhoto(k);if(okImg(d))out.photos[k]=d}catch(e){}}}
+  const day=new Date().toISOString().slice(0,10);
+  dl(`CSM-backup-${day}.json`,JSON.stringify(out),"application/json");
+  ls.set("csm-lastbackup",Date.now());toast(t("bkDone",{n:fmt(n)}));render();
+};
+APP.restore=async inp=>{
+  const f=inp.files&&inp.files[0];inp.value="";if(!f||!isAdmin())return;
+  let b;try{b=JSON.parse(await f.text())}catch(e){toast(t("bkBad"));return}
+  if(!b||b.app!=="csm-dalil"||typeof b.data!=="object"){toast(t("bkBad"));return}
+  const jobs=[];
+  ALLC.forEach(c=>(Array.isArray(b.data[c])?b.data[c]:[]).forEach(x=>{if(x&&x.id){const o={...x};delete o.id;jobs.push(()=>store.save(c,x.id,o))}}));
+  Object.entries(b.phones||{}).forEach(([k,p])=>{const i=k.indexOf("__");if(i>0&&p)jobs.push(()=>store.savePhone(k.slice(0,i),k.slice(i+2),p))});
+  (b.cards||[]).forEach(x=>{if(x&&x.id)jobs.push(()=>store.saveCard(x.id,x))});
+  (b.news||[]).forEach(x=>{if(x&&x.id){const o={...x};delete o.id;jobs.push(()=>store.saveNews(x.id,o))}});
+  Object.entries(b.photos||{}).forEach(([k,d])=>{if(okImg(d))jobs.push(()=>store.savePhoto(k,d))});
+  if(b.config&&b.config.site)jobs.push(()=>store.saveConfig("site",b.config.site));
+  if(b.config&&b.config.lists)jobs.push(()=>store.saveConfig("lists",b.config.lists));
+  if(!jobs.length){toast(t("bkBad"));return}
+  if(!confirm(t("bkQ",{n:fmt(jobs.length)})))return;
+  let i=0;for(const j of jobs){try{await j()}catch(e){}i++;if(i%25===0)toast(t("bkRun",{i:fmt(i),n:fmt(jobs.length)}))}
+  toast(t("bkRDone",{n:fmt(jobs.length)}));
+};
+{const _b=banner;banner=()=>{let h=_b();
+  if(isAdmin()&&!DEMO&&view==="home"){const n=bkDaysAgo(),total=ALLC.reduce((a,c)=>a+data[c].length,0);
+    if(total>0&&(n===null||n>=7))h+=`<div class="banner">${t("bkRem",{d:n===null?t("bkNone"):t("bkDays",{n:fmt(n)})})} <button class="lnkb" onclick="APP.backup()">${t("bkRemNow")}</button></div>`}
+  return h}}
+/* ====== تقرير النواقص لكل إقليم (للطباعة وإرساله إلى مشرف الإقليم) ====== */
+Object.assign(S,{
+ gapsT:["تقرير النواقص","Rapport des manquants"],gaps:["تقرير النواقص","Rapport des manquants"],
+ gapsHint:["قائمة بالمؤسسات التي ينقصها بيان مهم، لتسلّمها إلى مشرف الإقليم ليكملها.","Fiches auxquelles il manque une information importante, à remettre au superviseur de la région."],
+ gapsAllR:["كل الأقاليم","Toutes les régions"],gapsAllT:["كل أنواع النقص","Tous les manquants"],
+ gGps:["الإحداثيات","GPS"],gPlace:["الموقع","Localisation"],gResp:["المسؤول","Responsable"],gPhone:["الهاتف","Téléphone"],
+ gapsTot:["المؤسسات: {n} — فيها نقص: {g} — مكتملة: {o}","Fiches : {n} — incomplètes : {g} — complètes : {o}"],
+ gapsNone:["لا نقص ظاهر، بارك الله فيكم 👏","Rien à compléter 👏"],
+ gapsMiss:["الناقص","Manquant"],gapsPhNote:["ملاحظة: نقص الهاتف يظهر للمشرف العام فقط.","Note : le téléphone manquant n'est visible que par l'administrateur."]
+});
+let gapR="",gapT="";
+APP.gapSet=(k,v)=>{if(k==="r")gapR=v;else gapT=v;render()};
+const GAPK=[["gps","gGps"],["place","gPlace"],["resp","gResp"],["phone","gPhone"]];
+function gapsOf(c,x){
+  const g=[];
+  if(!parseGps(x.gps))g.push("gps");
+  if(x.region===BAMAKO?!(x.commune||x.quarter):!(x.commune||x.city))g.push("place");
+  if(c!=="duat"&&!respOf(x))g.push("resp");
+  if(isAdmin()&&!phones[pkey(c,x.id)])g.push("phone");
+  return g}
+function renderGaps(){
+  if(!(isAdmin()||isRegAdmin()))return `<div class="empty">${t("askAdm")}</div>`;
+  const reg=isAdmin()?gapR:(me.region||"");
+  const all=allRows().filter(({c,x})=>c!=="offices"&&(!reg||x.region===reg)).map(({c,x})=>({c,x,g:gapsOf(c,x)}));
+  const bad=all.filter(o=>o.g.length&&(!gapT||o.g.includes(gapT)));
+  const cnt={};GAPK.forEach(([k])=>cnt[k]=all.filter(o=>o.g.includes(k)).length);
+  bad.sort((a,b)=>REGIONS.indexOf(a.x.region)-REGIONS.indexOf(b.x.region)||String(a.x.commune||"").localeCompare(String(b.x.commune||""),"ar")||String(a.x.name).localeCompare(String(b.x.name),"ar"));
+  const row=(o,i)=>`<tr><td class="num">${i+1}</td><td dir="ltr" class="cd">${esc(o.x.code||"")}</td><td><b>${CATS[o.c].ic} ${esc(o.x.name)}</b></td><td>${esc(placeOf(o.x))}</td><td>${o.g.map(k=>`<span class="gp">${esc(L(S[GAPK.find(z=>z[0]===k)[1]]))}</span>`).join(" ")}</td><td>${o.x.status==="verified"?"✅":"🕓"}</td></tr>`;
+  const head=`<tr><th>#</th><th>${t("codeL")}</th><th>${t("name")}</th><th>${t("prPlace")}</th><th>${t("gapsMiss")}</th><th></th></tr>`;
+  let n=0;const grp={};bad.forEach(o=>{const k=(o.x.region||"—")+"|"+(o.x.commune||"");(grp[k]=grp[k]||[]).push(o)});
+  const body=Object.entries(grp).map(([k,a])=>{const [r,cm]=k.split("|");return `<h3 class="prg">📍 ${esc(tv(r))}${cm?" › "+esc(tv(cm)):""} <span>(${fmt(a.length)})</span></h3><table class="prt"><thead>${head}</thead><tbody>${a.map(o=>row(o,n++)).join("")}</tbody></table>`}).join("");
+  const sel=isAdmin()?`<select onchange="APP.gapSet('r',this.value)"><option value="">${t("gapsAllR")}</option>${REGIONS.map(r=>`<option value="${esc(r)}" ${gapR===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select>`:"";
+  const typ=`<select onchange="APP.gapSet('t',this.value)"><option value="">${t("gapsAllT")}</option>${GAPK.filter(([k])=>k!=="phone"||isAdmin()).map(([k,l])=>`<option value="${k}" ${gapT===k?"selected":""}>${esc(L(S[l]))} (${fmt(cnt[k])})</option>`).join("")}</select>`;
+  return `<div class="tools noprint">${sel}${typ}<button class="bp" onclick="print()">${t("prGo")}</button></div><div class="hint noprint">${t("gapsHint")} ${isAdmin()?"":t("gapsPhNote")}</div>
+   <div class="prdoc"><div class="prhd"><img src="logo.png" alt=""><div><b>${esc(L(["تجمع أهل السنة والجماعة في مالي","Communauté Sunnite du Mali (CSM)"]))}</b><h2>📋 ${t("gapsT")}${reg?" — "+esc(tv(reg)):""}</h2>
+   <div class="count">${t("prDate")}: ${dfmt(new Date().toISOString())}</div></div><img src="mali-flag.svg" alt="" class="fl"></div>
+   <div class="prtot">${t("gapsTot",{n:fmt(all.length),g:fmt(all.filter(o=>o.g.length).length),o:fmt(all.filter(o=>!o.g.length).length)})} · ${GAPK.filter(([k])=>k!=="phone"||isAdmin()).map(([k,l])=>esc(L(S[l]))+": "+fmt(cnt[k])).join(" · ")}</div>
+   ${bad.length?body:`<div class="empty">${t("gapsNone")}</div>`}
+   <div class="prft">youssoufsid.github.io/csm-dalil — ${esc(L(["دليل المؤسسات السنية في مالي","Annuaire des institutions sunnites du Mali"]))}</div></div>`}
 
 /* ================= الأخبار ================= */
 Object.assign(S,{
@@ -2192,7 +2292,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="28";
+const APP_VERSION="29";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
