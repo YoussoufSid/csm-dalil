@@ -473,7 +473,7 @@ let splashShown=false,_splashed=false;
 // بوابة الدخول بعد الدعاء: ﴿ادخلوها بسلام آمنين﴾ ثم تنفتح البوابة إلى التطبيق
 function gate(){return new Promise(res=>{
   const g=document.createElement("div");g.id="gate";
-  g.innerHTML=`<div class="g-img"></div><div class="g-shade"></div>
+  g.innerHTML=`<div class="g-img"></div><div class="g-shade"></div><img class="g-flag" src="mali-flag.svg" alt="علم مالي">
    <div class="g-in"><div class="g-ayah">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="g-ref">${esc(L(["سورة الحجر، الآية ٤٦","Sourate Al-Hijr, verset 46"]))}</div>
    <button class="g-go">${t("enterApp")}</button></div>`;
   document.body.appendChild(g);
@@ -2049,7 +2049,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="26";
+const APP_VERSION="27";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
