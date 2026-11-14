@@ -581,6 +581,7 @@ function renderAuth(){
   $("#aswitch").onclick=()=>{authMode=up?"in":"up";renderAuth()};
   const g=$("#gst");if(g)g.onclick=()=>store.guest();
   if(g&&/^#(zair|visit|public)$/.test(location.hash)){location.hash="home";store.guest()}
+  else if(g&&/^#i\/[a-z]+\/[^\/]+$/.test(location.hash))store.guest(); // رابط مؤسسة (من لوحة QR): يفتح للزائر دون حساب
   if($("#areset"))$("#areset").onclick=async()=>{const e=$("#ae").value.trim();if(!e){authMsg(t("forgotFirst"));return}try{await store.reset(e);authMsg(t("resetSent"))}catch(x){authMsg(authErr(x))}};
   $("#af").onsubmit=async ev=>{ev.preventDefault();authMsg("");const b=ev.submitter;b.disabled=true;
     try{if(up)await store.signup($("#an").value.trim(),$("#ae").value.trim(),$("#ap").value);else await store.signin($("#ae").value.trim(),$("#ap").value)}
@@ -812,7 +813,7 @@ function renderList(c){
    ${filt.region?locFilters(c):""}
    <select id="sf"><option value="">${t("allStatus")}</option><option value="verified" ${filt.status==="verified"?"selected":""}>✅ ${t("verified")}</option><option value="pending" ${filt.status==="pending"?"selected":""}>🕓 ${t("pending")}</option>${canWrite()?`<option value="mine" ${filt.status==="mine"?"selected":""}>✍️ ${t("myEntries")}</option>`:""}</select>
    ${canWriteC(c)?`<button class="bp" onclick="APP.form('${c}')">${t("add")} ${co(c)}</button>`:""}
-   <button class="bs" onclick="location.hash='print/${c}'">🖨️ ${t("prList")}</button><button class="bs" onclick="APP.csv('${c}')">⬇️ CSV</button>${c==="offices"?`<button class="bs" onclick="APP.structCsv()">${t("stCsv")}</button>`:""}</div>${c==="offices"?`<span class="vtog"><button class="bs ${offView!=="tree"?"on":""}" onclick="APP.offView('list')">${t("listV")}</button><button class="bs ${offView==="tree"?"on":""}" onclick="APP.offView('tree')">${t("treeV")}</button></span>`:""}</div>
+   <button class="bs" onclick="location.hash='print/${c}'">🖨️ ${t("prList")}</button>${isAdmin()||isRegAdmin()?`<button class="bs" onclick="location.hash='qrs/${c}'">${t("qrB")}</button>`:""}<button class="bs" onclick="APP.csv('${c}')">⬇️ CSV</button>${c==="offices"?`<button class="bs" onclick="APP.structCsv()">${t("stCsv")}</button>`:""}</div>${c==="offices"?`<span class="vtog"><button class="bs ${offView!=="tree"?"on":""}" onclick="APP.offView('list')">${t("listV")}</button><button class="bs ${offView==="tree"?"on":""}" onclick="APP.offView('tree')">${t("treeV")}</button></span>`:""}</div>
    <div class="count">${fmt(rows.length)} ${t("of")} ${fmt(data[c].length)}${(()=>{const pv=rows.filter(x=>x.status!=="verified"&&canVerify(x)).length;return pv&&filt.status==="pending"?` <button class="bg sm" onclick="APP.bulkVerify('${c}')">${t("bvBtn",{n:fmt(pv)})}</button>`:""})()}</div><div style="height:8px"></div>`;
   window._lastRows=rows;
   if(!rows.length)h+=`<div class="sec empty">${data[c].length?t("noMatch"):`<div style="font-size:40px">${CATS[c].ic}</div>${t("noneYet")}${canWriteC(c)?`<div style="margin-top:12px"><button class="bp" onclick="APP.form('${c}')">${t("addFirst")}</button></div>`:""}`}</div>`;
@@ -829,7 +830,7 @@ APP.bulkVerify=async c=>{const ids=(window._lastRows||[]).filter(x=>x.status!=="
   logAct("verify",c,"",n+" × "+cl(c),null);toast(t("bvDone",{n:fmt(n)}))};
 APP.goPending=c=>{const go=()=>{filt.status="pending";filt.region="";filt.arrond="";filt.commune="";filt.city="";render()};if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
 function render(){
-  syncBadge();document.body.classList.toggle("pc",view.startsWith("cardv/")||view.startsWith("cardsp/"));document.body.classList.toggle("pl",view.startsWith("print/")||view==="gaps");
+  syncBadge();document.body.classList.toggle("pc",view.startsWith("cardv/")||view.startsWith("cardsp/"));document.body.classList.toggle("pl",view.startsWith("print/")||view==="gaps"||view.startsWith("qrs/"));
   if(view.startsWith("verify/")&&store){renderVerify(view.slice(7));return}
   if(!me)return;
   if(!canRead()){renderWaiting();return}
@@ -841,6 +842,7 @@ function render(){
   const main=$("#main");
   if(view==="settings")setTimeout(()=>typeof sigPrev==="function"&&sigPrev(),0);
   if(view.startsWith("print/")){main.innerHTML=renderPrintList(view.slice(6));return}
+  if(view.startsWith("qrs/")){main.innerHTML=renderQrSheet(view.slice(4));afterQrSheet();return}
   if(view.startsWith("cardsp/")){const k=view.slice(7);main.innerHTML=renderCardsPrint(k);afterCardsPrint(k);return}
   if(view.startsWith("cardv/")){const id=view.slice(6);main.innerHTML=renderCardView(id);afterCardView(id);return}
   if(view.startsWith("card/")){const[,c,id]=view.split("/");main.innerHTML=renderCard(c,id);afterCard(c,id);return}
@@ -2240,6 +2242,33 @@ function renderGaps(){
    <div class="prtot">${t("gapsTot",{n:fmt(all.length),g:fmt(all.filter(o=>o.g.length).length),o:fmt(all.filter(o=>!o.g.length).length)})} · ${GAPK.filter(([k])=>k!=="phone"||isAdmin()).map(([k,l])=>esc(L(S[l]))+": "+fmt(cnt[k])).join(" · ")}</div>
    ${bad.length?body:`<div class="empty">${t("gapsNone")}</div>`}
    <div class="prft">youssoufsid.github.io/csm-dalil — ${esc(L(["دليل المؤسسات السنية في مالي","Annuaire des institutions sunnites du Mali"]))}</div></div>`}
+/* ====== لوحات QR: صفحة عامة لكل مؤسسة موثقة + طباعة ملصقات جاهزة ====== */
+Object.assign(S,{
+ qrB:["🔳 لوحات QR","🔳 Plaques QR"],
+ qrT:["لوحات QR — {c}","Plaques QR — {c}"],
+ qrHint:["كل لوحة تفتح صفحة المؤسسة مباشرة لأي شخص دون حساب. تُطبع المؤسسات الموثقة فقط، وتُحترم التصفية الحالية (الإقليم، الدائرة…).","Chaque plaque ouvre directement la fiche, sans compte. Seules les fiches vérifiées sont imprimées, selon le filtre en cours."],
+ qrScan:["امسح للتعريف بالمؤسسة","Scannez pour la fiche"],
+ qrNone:["لا توجد مؤسسات موثقة مطابقة للتصفية","Aucune fiche vérifiée pour ce filtre"],
+ qrPer:["في الصفحة","Par page"],qrN:["العدد: {n}","Nombre : {n}"]
+});
+let qrPer=6;
+APP.qrPer=v=>{qrPer=+v||6;render()};
+function renderQrSheet(c){
+  if(!CATS[c])return "";
+  const rows=filterRows(c).filter(x=>x.status==="verified").sort((a,b)=>REGIONS.indexOf(a.region)-REGIONS.indexOf(b.region)||String(a.commune||"").localeCompare(String(b.commune||""),"ar")||String(a.name).localeCompare(String(b.name),"ar"));
+  const base=location.origin+location.pathname;
+  const lab=x=>`<div class="qrl"><div class="qrh"><img src="logo.png" alt=""><b>${esc(L(["تجمع أهل السنة والجماعة في مالي","Communauté Sunnite du Mali"]))}</b></div>
+    <div class="qrc" data-u="${esc(base+"#i/"+c+"/"+encodeURIComponent(x.id))}"></div>
+    <div class="qrn">${CATS[c].ic} ${esc(x.name)}</div><div class="qrp">${esc(locLine(x))}</div>
+    ${x.code?`<div class="qrk" dir="ltr">${esc(x.code)}</div>`:""}<div class="qrs">${t("qrScan")}</div></div>`;
+  return `<div class="tools noprint"><a class="back" href="#${c}">${t("back")}</a>
+    <label>${t("qrPer")}: <select onchange="APP.qrPer(this.value)">${[2,4,6,9].map(n=>`<option ${qrPer===n?"selected":""}>${n}</option>`).join("")}</select></label>
+    <button class="bp" onclick="print()">${t("prGo")}</button></div>
+   <div class="hint noprint">${t("qrHint")} · ${t("qrN",{n:fmt(rows.length)})}</div>
+   <div class="qrg per${qrPer}">${rows.length?rows.map(lab).join(""):`<div class="empty">${t("qrNone")}</div>`}</div>`}
+async function afterQrSheet(){
+  try{await loadScript("lib/qrcode.js")}catch(e){return}
+  document.querySelectorAll(".qrc[data-u]").forEach(el=>{try{const q=window.qrcode(0,"M");q.addData(el.dataset.u);q.make();el.innerHTML=q.createSvgTag({cellSize:4,margin:2});el.removeAttribute("data-u")}catch(e){}})}
 
 /* ================= الأخبار ================= */
 Object.assign(S,{
@@ -2292,7 +2321,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="29";
+const APP_VERSION="30";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
