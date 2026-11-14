@@ -192,6 +192,7 @@ const DIRECTORATES=["المديرية الأولى","المديرية الثان
 const LOC=[
  {k:"region",l:["المقاطعة / الإقليم","District / Région"],t:"sel",o:REGIONS,req:1},
  {k:"commune",l:["الدائرة","Cercle"],t:"dl"},
+ {k:"arrond",l:["القسم الإداري","Arrondissement"],t:"arr"},
  {k:"city",l:["المدينة / القرية","Ville / Village"]},
  {k:"quarter",l:["الحي","Quartier"]},
  {k:"landmark",l:["أقرب معلم","Repère le plus proche"],ph:["مثال: قرب سوق الحي، خلف المدرسة الابتدائية","Ex. : près du marché, derrière l'école"]},
@@ -211,7 +212,7 @@ const CONFIG={site:{},lists:{}};
 let me=null;
 let store=null;
 let view=decodeURIComponent(location.hash.slice(1))||"home";
-let filt={q:"",region:"",status:"",commune:"",city:""};
+let filt={q:"",region:"",status:"",commune:"",city:"",arrond:""};
 let pendingWrites=0;
 const isAdmin=()=>me&&me.role==="admin";
 const canWrite=()=>me&&(me.role==="admin"||me.role==="contributor"||me.role==="regadmin");
@@ -276,6 +277,68 @@ const CERCLES_RAW={
 };
 const CERCLES={};
 Object.entries(CERCLES_RAW).forEach(([r,s])=>{CERCLES[r]=s.split("|").map(p=>{const [ar,fr]=p.split(":");if(!FRV[ar])FRV[ar]=fr;return ar})});
+/* ====== التقسيم الإداري الجديد لمقاطعة باماكو: 7 أقسام إدارية و102 حيّا ====== */
+Object.assign(S,{
+ otherQ:["حي آخر (اكتب الاسم)","Autre quartier (saisir)"],
+ arrHint:["يُملأ تلقائياً عند اختيار الحي","Rempli automatiquement selon le quartier"],
+ arrT:["الأقسام الإدارية لباماكو","Arrondissements de Bamako"],
+ arrInfo:["التقسيم الجديد: ٧ أقسام إدارية و١٠٢ حيّاً. يملأ الزر «القسم الإداري» تلقائياً لكل سجلات باماكو التي لم يُحدَّد قسمها، اعتماداً على اسم الحي.","Nouveau découpage : 7 arrondissements, 102 quartiers. Le bouton renseigne l'arrondissement des fiches de Bamako d'après leur quartier."],
+ arrB:["ملء الأقسام الإدارية الآن","Renseigner les arrondissements"],
+ arrQ:["سيُحدَّد القسم الإداري لـ {n} سجلاً. متابعة؟","L'arrondissement sera renseigné pour {n} fiches. Continuer ?"],
+ arrNone:["لا توجد سجلات تحتاج تحديد القسم الإداري","Aucune fiche à compléter"],
+ arrDone:["✅ حُدِّد القسم الإداري لـ {n} سجلاً","✅ {n} fiches complétées"]
+});
+const QLAB=["الحي","Quartier"];
+const ARRONDS=["القسم الأول","القسم الثاني","القسم الثالث","القسم الرابع","القسم الخامس","القسم السادس","القسم السابع"];
+const ARR_FR={"القسم الأول":"1er Arrondissement","القسم الثاني":"2e Arrondissement","القسم الثالث":"3e Arrondissement","القسم الرابع":"4e Arrondissement","القسم الخامس":"5e Arrondissement","القسم السادس":"6e Arrondissement","القسم السابع":"7e Arrondissement"};
+const BKO_RAW={
+"القسم الأول":"بولكاسومبوغو:Boulkassoumbougou|بانكوني:Banconi|جيليبوغو:Djélibougou|جومانزانا:Djoumanzana|فادجيغيلا:Fadjiguila|كوروفينا الشمالية:Korofina Nord|كوروفينا الجنوبية:Korofina Sud|سوتوبا:Sotuba|سانغاريبوغو:Sangarébougou|سارامبوغو:Sarambougou|سيدوبوغو:Seydoubougou|ديالاكورودجي:Dialakorodji|نتيغيدو-ساماسيبوغو:N'Teguedo-Samassébougou|نتيغيدو-سيراكورو:N'Teguedo-Sirakoro|موريبابوغو:Moribabougou|دوغوبالي:Dogobale|سليمانيبوغو:Souleymanebougou|فومبابوغو:Fombabougou|نغاباكورو دروا:N'Gabacoro Droit|تيتيبوغو:Titibougou|سيكوروني:Sikoroni",
+"القسم الثاني":"باغادادجي:Bagadadji|باكاريبوغو:Bakarybougou|بوغوبا:Bougouba|بوزولا:Bozola|إيبودروم:Hippodrome|كونيبوغو:Konébougou|ميدينا-كورا:Medina-Coura|ميسيرا:Missira|نغومي:N'Gomi|نياريلا:Niarela|كينزامبوغو:Quinzambougou|سان-فيلس:Sans-Fils|المنطقة الصناعية:Zone Industrielle",
+"القسم الثالث":"باديالان 1:Badialan I|باديالان 2:Badialan II|باديالان 3:Badialan III|باماكو-كورا:Bamako-Coura|باماكو-كورا بوليبانا:Bamako-Coura Bolibana|المركز التجاري:Centre Commercial|دار السلام:Darsalam|درافيلا:Dravela|درافيلا بوليبانا:Dravela Bolibana|كودابوغو:Kodabougou|كولوبا:Koulouba|نيوميرامبوغو:Niomirambougou|نتوميكوروبوغو:N'Tomikorobougou|أوولو فوبوغو:Ouolo Fobougou|أوولو فوبوغو بوليبانا:Ouolo Fobougou Bolibana|بوينت G:Point G|سامي:Samé|سيراكورو-دونفينغ:Sirakoro-Dounfing|كولونيكو:Koulouniko|سوغونافينغ:Sogonafing|سانانكورو:Sanankoro|دياغوني:Diagoni",
+"القسم الرابع":"همدلاي:Hamdallaye|لافيابوغو:Lafiabougou|لاسا:Lassa|جيكوروني بارا:Djicoroni Para|سيبينيكورو:Sébénikoro|سيبيريبوغو:Sibiribougou|كالابانبوغو:Kalabanbougou|دوغودومان:Dogodouman|غرينغومي:Gringoumé|تاليكو:Taliko|ويزيندوغو:Ouezindougou|ماماريبوغو:Mamaribougou|كانادجيغيلا:Kanadjiguila|كابالابوغو:Kabalabougou",
+"القسم الخامس":"باكودجيكوروني:Bacodjicoroni|بادالابوغو:Badalabougou|داودابوغو:Daoudabougou|غارانتيغيبوغو:Garantiguibougou|كالابانكورا:Kalabancoura|حي مالي:Quartier Mali|ساباليبوغو:Sabalibougou|سيما:Séma|توروكوروبوغو:Torokorobougou",
+"القسم السادس":"بانانكابوغو:Banankabougou|ديانيغيلا:Dianéguela|فالاديي:Faladié|ماغنامبوغو:Magnambougou|نياماكورو:Niamakoro|سينو:Sénou|سوغونينكو:Sogoninko|سوكورودجي:Sokorodji|ييريماديو:Yirimadio|ميسابوغو:Missabougou|دياتولا:Diatoula|نيامانا:Niamana|سيراكورو-ميغيتانا:Sirakoro-Méguétana|نتاباكورو:N'Tabacoro|درامانيبوغو-تيليم:Dramanebougou-Tellem|ساباليبوغو كوراني:Sabalibougou Kourani",
+"القسم السابع":"غوانا:Gouana|كابالا:Kabala|كالابانكورو:Kalabancoro|كورالي:Kouralé|ميسالا:Missala|ميسالابوغو:Missalabougou|نغولو بوغو:N'Golo Bougou"
+};
+const BKO_Q={},Q_ARR={};
+Object.entries(ARR_FR).forEach(([a,f])=>{if(!FRV[a])FRV[a]=f});
+Object.entries(BKO_RAW).forEach(([a,s])=>{BKO_Q[a]=s.split("|").map(p=>{const [ar,fr]=p.split(":");if(fr&&!FRV[ar])FRV[ar]=fr;Q_ARR[ar]=a;return ar})});
+const BKO_QUARTERS=ARRONDS.flatMap(a=>BKO_Q[a]);
+// الرمز الإداري الرسمي للحي: 000 + رقم المقاطعة + ترتيب الحي
+const qcode=q=>{const a=Q_ARR[q];if(!a)return"";return "000"+(ARRONDS.indexOf(a)+1)+String(BKO_Q[a].indexOf(q)+1).padStart(4,"0")};
+const arrondOf=x=>x&&x.region===BAMAKO?(x.arrond||Q_ARR[x.quarter]||""):"";
+
+function arrondInput(v){return `<select id="f_arrond"><option value="">${t("choose")}</option>${ARRONDS.map(o=>`<option value="${esc(o)}" ${v===o?"selected":""}>${esc(tv(o))}</option>`).join("")}</select><div class="hint">${t("arrHint")}</div>`}
+function qDatalist(){return `<datalist id="dl_q">${BKO_QUARTERS.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>`}
+function quarterInput(r,v){
+  if(r!==BAMAKO)return `<div class="row"><input id="f_quarter" value="${esc(v||"")}" autocomplete="off">${SR?`<button type="button" class="micb" title="${t("voice")}" onclick="APP.voice('f_quarter',this)">🎤</button>`:""}</div>`;
+  if(!v||BKO_QUARTERS.includes(v))return `<select id="f_quarter" onchange="APP.qPick(this)"><option value="">${t("choose")}</option>${ARRONDS.map(a=>`<optgroup label="${esc(tv(a))}">${BKO_Q[a].map(o=>`<option value="${esc(o)}" ${v===o?"selected":""}>${esc(tv(o))}</option>`).join("")}</optgroup>`).join("")}<option value="__o">✏️ ${t("otherQ")}</option></select>`;
+  return `<input id="f_quarter" list="dl_q" value="${esc(v)}" autocomplete="off">${qDatalist()}`;
+}
+APP.qPick=el=>{
+  if(el.value==="__o"){el.outerHTML=`<input id="f_quarter" list="dl_q" autocomplete="off" placeholder="${esc(t("otherQ"))}">`+qDatalist();const n=$("#f_quarter");if(n)n.focus();return}
+  const a=Q_ARR[el.value],s=$("#f_arrond");if(a&&s)s.value=a;
+};
+// تُستدعى عند تغيّر الإقليم: تبديل خانة الحي وإظهار/إخفاء المقاطعة الإدارية
+function updQuarter(r,chg){
+  const wq=$("#w_quarter");
+  if(wq){let cur=chg?"":(($("#f_quarter")&&$("#f_quarter").value)||"");if(cur==="__o")cur="";
+    wq.innerHTML=`<label id="l_quarter">${L(QLAB)}</label>`+quarterInput(r,cur)}
+  const wa=$("#w_arrond");if(wa)wa.style.display=r===BAMAKO?"":"none";
+  if(r!==BAMAKO){const s=$("#f_arrond");if(s)s.value=""}
+}
+/* ---- ملء المقاطعة الإدارية تلقائيا للسجلات القديمة ---- */
+APP.arrFill=async()=>{
+  const todo=[];
+  ALLC.forEach(c=>data[c].forEach(x=>{if(x.region===BAMAKO&&!x.arrond&&Q_ARR[x.quarter])todo.push([c,x])}));
+  if(!todo.length){toast(t("arrNone"));return}
+  if(!confirm(t("arrQ",{n:fmt(todo.length)})))return;
+  let n=0;
+  for(const [c,x] of todo){try{await store.patch(c,x.id,{arrond:Q_ARR[x.quarter]});x.arrond=Q_ARR[x.quarter];n++}catch(e){}}
+  toast(t("arrDone",{n:fmt(n)}));render();
+};
+const arrBox=()=>!isAdmin()?"":`<div class="card"><h3>🗺️ ${t("arrT")}</h3><div class="hint">${t("arrInfo")}</div>
+  <button class="bs" onclick="APP.arrFill()">🗺️ ${t("arrB")}</button></div>`;
 /* ================= التخزين: تجريبي (على الجهاز) ================= */
 function LocalStore(){
   const K="csm-demo-v1";
@@ -759,7 +822,7 @@ APP.bulkVerify=async c=>{const ids=(window._lastRows||[]).filter(x=>x.status!=="
   if(!confirm(t("bvQ",{n:fmt(ids.length)})))return;const now=new Date().toISOString();let n=0;
   for(const x of ids){const {id,...o}=x;Object.assign(o,{status:"verified",verifiedBy:me.uid,verifiedByName:me.name,verifiedAt:now});await store.save(c,id,o);n++}
   logAct("verify",c,"",n+" × "+cl(c),null);toast(t("bvDone",{n:fmt(n)}))};
-APP.goPending=c=>{const go=()=>{filt.status="pending";filt.region="";render()};if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
+APP.goPending=c=>{const go=()=>{filt.status="pending";filt.region="";filt.arrond="";filt.commune="";filt.city="";render()};if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
 function render(){
   syncBadge();document.body.classList.toggle("pc",view.startsWith("cardv/")||view.startsWith("cardsp/"));document.body.classList.toggle("pl",view.startsWith("print/"));
   if(view.startsWith("verify/")&&store){renderVerify(view.slice(7));return}
@@ -783,7 +846,7 @@ function render(){
   if(view==="stats")afterStats();
   if(view.startsWith("i/")&&!dlg.open){const[,c,id]=view.split("/");if(data[c]&&data[c].find(r=>r.id===id))APP.detail(c,id)}
   for(const id of ["q","gq"]){const q=$("#"+id);if(q)q.oninput=e=>{filt.q=e.target.value;const p=e.target.selectionStart;render();const n=$("#"+id);n.focus();n.setSelectionRange(p,p)}}
-  const rg=$("#rg");if(rg)rg.onchange=e=>{filt.region=e.target.value;filt.commune="";filt.city="";render()};
+  const rg=$("#rg");if(rg)rg.onchange=e=>{filt.region=e.target.value;filt.commune="";filt.city="";filt.arrond="";render()};
   const sf=$("#sf");if(sf)sf.onchange=e=>{filt.status=e.target.value;render()};
 }
 
@@ -798,6 +861,8 @@ function inputFor(f,v,ctx){
   if(f.t==="time")return `<input id="${id}" type="time" value="${esc(v)}" dir="ltr">`;
   if(f.t==="link"){const names=[...new Set([...data.mosques,...data.assoc].map(x=>x.name))].sort();return `<input id="${id}" list="dl_${f.k}" value="${esc(v)}" autocomplete="off"><datalist id="dl_${f.k}">${names.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>`}
   if(f.t==="dl")return communeInput(ctx.region,v);
+  if(f.t==="arr")return arrondInput(v);
+  if(f.k==="quarter")return quarterInput(ctx.region,v);
   if(f.t==="gps")return `<div class="row"><input id="${id}" dir="ltr" placeholder="12.6392, -8.0029" value="${esc(v)}"><button type="button" class="bg" onclick="APP.locate()">${t("gpsBtn")}</button></div><div class="hint" id="gpsh">${t("gpsHint")}</div>`;
   if(f.t==="tel"){const hidden=ctx.editing&&!isAdmin();return `<input id="${id}" type="tel" dir="ltr" value="${esc(v)}" placeholder="${hidden?t("phoneHidden"):""}"><div class="hint">${t("phoneHint")}</div>`}
   const mic=!f.t&&SR?`<button type="button" class="micb" title="${t("voice")}" onclick="APP.voice('${id}',this)">🎤</button>`:"";
@@ -819,7 +884,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
   const ctx={editing:!!id,region:vals.region};
   const fs=fieldsOf(c);
   const sect=k=>k==="region"&&c!=="duat"?`<h4>📍 ${t("secLoc")}</h4>`:k===CATS[c].fields[1].k?`<h4>📝 ${t("secData")}</h4>`:k==="phone"?`<h4>☎️ ${t("secContact")}</h4>`:"";
-  const ESS=["name","region","commune","city","quarter","landmark","gps",CATS[c].fields[1].k,...[]];
+  const ESS=["name","region","commune","arrond","city","quarter","landmark","gps",CATS[c].fields[1].k,...[]];
   const isEss=f=>f.req||ESS.includes(f.k);
   const fld=f=>(isEss(f)?sect(f.k):(f.k==="phone"?sect(f.k):""))+`<div class="${f.full||f.t==="gps"?"full":""}" id="w_${f.k}"><label id="l_${f.k}">${L(flab(f,vals))}${f.req?" <b>*</b>":""}</label>${inputFor(f,vals[f.k],ctx)}</div>`;
   $("#dt").textContent=CATS[c].ic+" "+(id?t("editT"):t("addT"))+co(c);
@@ -829,7 +894,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
    ${id&&!canVerify(x)&&x.status==="verified"?`<div class="hint">${t("reVerify")}</div>`:""}<div class="err" id="ferr"></div></div>
    <div class="df"><button class="bp" type="submit" value="save">${t("save")}</button>${!id?`<button class="bs" type="submit" value="again">${t("saveNew")}</button>`:""}<button class="bs" type="button" onclick="document.getElementById('dlg').close()">${t("cancel")}</button></div></form>`;
   // تغيّر الإقليم: تتبدّل خانة المديرية/الدائرة، وتختفي «المدينة/القرية» في باماكو
-  const updLoc=(r,chg)=>{const w=$("#w_commune");if(w){let cur=$("#f_commune").value;if(cur==="__o")cur="";if(chg&&cur&&!officialCommunes(r).includes(cur))cur="";w.innerHTML=`<label id="l_commune">${L(flab({k:"commune"},{region:r}))}</label>`+communeInput(r,r===BAMAKO&&!DIRECTORATES.includes(cur)?"":cur)}const wc=$("#w_city");if(wc)wc.style.display=r===BAMAKO?"none":""};
+  const updLoc=(r,chg)=>{const w=$("#w_commune");if(w){let cur=$("#f_commune").value;if(cur==="__o")cur="";if(chg&&cur&&!officialCommunes(r).includes(cur))cur="";w.innerHTML=`<label id="l_commune">${L(flab({k:"commune"},{region:r}))}</label>`+communeInput(r,r===BAMAKO&&!DIRECTORATES.includes(cur)?"":cur)}const wc=$("#w_city");if(wc)wc.style.display=r===BAMAKO?"none":"";updQuarter(r,chg)};
   if($("#f_region")){$("#f_region").onchange=e=>{["quarter","city","landmark"].forEach(k=>{const n=$("#f_"+k);if(n)n.value=""});updLoc(e.target.value,1)};updLoc(vals.region||"")}
   if(c==="offices"&&!isAdmin()&&$("#f_region")){const rg=$("#f_region");rg.value=me.region;rg.disabled=true;updLoc(me.region);
     const ok=me.region===BAMAKO?LV_BKO:LV_REG;[...$("#f_level").options].forEach(o=>{if(o.value&&!ok.includes(o.value))o.remove()})}
@@ -848,7 +913,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
     const o={};let phone="";
     document.querySelectorAll(".fg .bad").forEach(n=>n.classList.remove("bad"));
     for(const f of fs){
-      const el=$("#f_"+f.k);let v;
+      const el=$("#f_"+f.k);if(!el)continue;let v;
       if(f.t==="chk")v=[...el.querySelectorAll("input:checked")].map(i=>i.value);
       else if(f.t==="num")v=el.value===""?null:num(el.value);
       else v=el.value.trim();
@@ -856,6 +921,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
       if(f.t==="gps"&&v&&!parseGps(v)){$("#ferr").textContent=t("gpsBad");$("#w_gps").classList.add("bad");return}
       if(f.priv)phone=v;else o[f.k]=v;
     }
+    if(o.region===BAMAKO){if(!o.arrond&&Q_ARR[o.quarter])o.arrond=Q_ARR[o.quarter]}else if("arrond" in o)o.arrond="";
     if(c==="offices"){const v=o.level,bad=(k,m)=>{$("#ferr").textContent=m;const w=$("#w_"+k);if(w)w.classList.add("bad");return true};
       if(!isAdmin()&&o.region!==me.region&&bad("region",t("offSave")))return;
       if(LV_BKO.includes(v)&&o.region!==BAMAKO&&bad("region",t("lvNeedBko")))return;
@@ -893,6 +959,7 @@ APP.detail=(c,id)=>{
   const rows=fieldsOf(c).slice(1).filter(f=>!f.priv).map(f=>{
     if(f.t==="gps"){const g=parseGps(x.gps);return [L(f.l),g?`<a class="lnk" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${g[0]},${g[1]}">${t("onMap")}</a> <span dir="ltr" class="count">${esc(x.gps)}</span>`:""]}
     if(f.k==="city"&&x.region===BAMAKO)return ["",""];
+    if(f.k==="arrond"&&x.region!==BAMAKO)return ["",""];
     return [L(flab(f,x)),show(x[f.k])]}).filter(r=>r[1]);
   let qa="";
   if(isAdmin()){const p=phones[pkey(c,id)];if(p){const nums=phoneList(p);
@@ -1149,8 +1216,10 @@ function impMap(rows,defRegion){
       if(f.t==="num")v=num(v);else if(f.t==="chk")v=v.split(/[\/،,;]/).map(z=>optBack[norm(z)]||z.trim()).filter(Boolean);else if(f.t==="sel")v=f.k==="region"?(regMap[norm(v)]||""):(optBack[norm(v)]||v);
       o[f.k]=v});
     if(o.commune)o.commune=optBack[norm(o.commune)]||o.commune;
+    if(o.arrond)o.arrond=optBack[norm(o.arrond)]||o.arrond;
+    if(o.quarter)o.quarter=optBack[norm(o.quarter)]||o.quarter;
     if(!o.region&&defRegion)o.region=defRegion;
-    if(!o.name||(!o.region&&impCat!=="duat")){bad++;return}if(o.region===BAMAKO)delete o.city;out.push(o)});
+    if(!o.name||(!o.region&&impCat!=="duat")){bad++;return}if(o.region===BAMAKO){delete o.city;if(!o.arrond&&Q_ARR[o.quarter])o.arrond=Q_ARR[o.quarter]}else delete o.arrond;out.push(o)});
   return {rows:out,bad};
 }
 function impPreview(res,bad){
@@ -1187,7 +1256,7 @@ function renderSettings(){
    <label style="margin-top:8px">${t("region")}</label><select id="s_reg" onchange="APP.showCommunes(this.value)">${REGIONS.filter(r=>r!==BAMAKO).map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select>
    <textarea id="s_comm" rows="7" style="margin-top:8px">${esc(officialCommunes(REGIONS[1]).join("\n"))}</textarea>
    <button class="bp" style="margin-top:8px" onclick="APP.saveCommunes()">${t("saveB")}</button></div>
-  ${renumBox()}${unifyBox()}${sigBox()}
+  ${renumBox()}${arrBox()}${unifyBox()}${sigBox()}
   <div class="sec"><h2>💾 ${t("backupT")}</h2><div class="hint">${t("backupHint")}</div><button class="bp" style="margin-top:10px" onclick="APP.backup()">${t("backupBtn")}</button></div>`;
 }
 APP.saveSite=()=>{const o={};["about","phone","whatsapp","email","facebook","address","presName","cardYears"].forEach(k=>o[k]=$("#s_"+k).value.trim());store.saveConfig("site",o);toast(t("saved"))};
@@ -1890,6 +1959,7 @@ Object.assign(S,{repOff:["مكاتب التجمع حسب المستوى","Bureau
 /* ================= طباعة قوائم المؤسسات حسب المكان والحالة ================= */
 Object.assign(S,{prList:["طباعة","Imprimer"],allDirs:["كل المديريات","Toutes les directions"],allCercles:["كل الدوائر","Tous les cercles"],
  allCities:["كل المدن والقرى","Toutes les villes et villages"],allQuarters:["كل الأحياء","Tous les quartiers"],
+ allArr:["كل الأقسام الإدارية","Tous les arrondissements"],
  prTitle:["قائمة {c}","Liste : {c}"],prFilt:["التصفية","Filtre"],prAll:["كل مالي","Tout le Mali"],prDate:["تاريخ الطباعة","Imprimé le"],
  prTot:["المجموع: {n} — ✅ موثق {v} · 🕓 قيد المراجعة {p}","Total : {n} — ✅ vérifiées {v} · 🕓 en attente {p}"],
  prPhones:["إظهار الهواتف","Afficher les téléphones"],prGroup:["تجميع حسب المكان","Grouper par lieu"],prResp:["المسؤول","Responsable"],prPlace:["المكان","Lieu"],
@@ -1897,20 +1967,21 @@ Object.assign(S,{prList:["طباعة","Imprimer"],allDirs:["كل المديري�
 const respOf=x=>x.imam||x.director||x.president||x.manager||(x.struct&&x.struct.pres&&x.struct.pres.n)||"";
 const placeOf=x=>[...new Set([x.city,x.quarter,x.landmark].filter(Boolean))].join(" · ");
 function filterRows(c){const q=filt.q.trim().toLowerCase();
-  return data[c].filter(x=>(c!=="offices"||!filt.level||x.level===filt.level)&&(!filt.region||x.region===filt.region)&&(!filt.commune||x.commune===filt.commune)&&(!filt.city||(x.city||x.quarter)===filt.city)&&(!filt.status||(filt.status==="mine"?x.createdBy===me.uid:(filt.status==="verified")===(x.status==="verified")))&&(!q||(JSON.stringify(x)+" "+tv(x.region)).toLowerCase().includes(q)))}
+  return data[c].filter(x=>(c!=="offices"||!filt.level||x.level===filt.level)&&(!filt.region||x.region===filt.region)&&(!filt.commune||x.commune===filt.commune)&&(!filt.arrond||arrondOf(x)===filt.arrond)&&(!filt.city||(x.city||x.quarter)===filt.city)&&(!filt.status||(filt.status==="mine"?x.createdBy===me.uid:(filt.status==="verified")===(x.status==="verified")))&&(!q||(JSON.stringify(x)+" "+tv(x.region)).toLowerCase().includes(q)))}
 function locFilters(c){
   const inR=data[c].filter(x=>x.region===filt.region),isB=filt.region===BAMAKO;
   const coms=[...new Set([...(officialCommunes(filt.region)||[]),...inR.map(x=>x.commune).filter(Boolean)])];
-  const cities=[...new Set(inR.filter(x=>!filt.commune||x.commune===filt.commune).map(x=>x.city||x.quarter).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
-  return `<select onchange="APP.lf('commune',this.value)"><option value="">${t(isB?"allDirs":"allCercles")}</option>${coms.map(v=>`<option value="${esc(v)}" ${filt.commune===v?"selected":""}>${esc(tv(v))} (${fmt(inR.filter(x=>x.commune===v).length)})</option>`).join("")}</select>
+  const cities=[...new Set(inR.filter(x=>(!filt.commune||x.commune===filt.commune)&&(!filt.arrond||arrondOf(x)===filt.arrond)).map(x=>x.city||x.quarter).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
+  const arrSel=isB?`<select onchange="APP.lf('arrond',this.value)"><option value="">${t("allArr")}</option>${ARRONDS.filter(a=>inR.some(x=>arrondOf(x)===a)).map(a=>`<option value="${esc(a)}" ${filt.arrond===a?"selected":""}>${esc(tv(a))} (${fmt(inR.filter(x=>arrondOf(x)===a).length)})</option>`).join("")}</select>`:"";
+  return arrSel+`<select onchange="APP.lf('commune',this.value)"><option value="">${t(isB?"allDirs":"allCercles")}</option>${coms.map(v=>`<option value="${esc(v)}" ${filt.commune===v?"selected":""}>${esc(tv(v))} (${fmt(inR.filter(x=>x.commune===v).length)})</option>`).join("")}</select>
    ${cities.length?`<select onchange="APP.lf('city',this.value)"><option value="">${t(isB?"allQuarters":"allCities")}</option>${cities.map(v=>`<option value="${esc(v)}" ${filt.city===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`:""}`}
-APP.lf=(k,v)=>{filt[k]=v;if(k==="commune")filt.city="";render()};
+APP.lf=(k,v)=>{filt[k]=v;if(k==="commune"||k==="arrond")filt.city="";render()};
 let prPh=false,prGrp=true;APP.prOpt=(k,v)=>{if(k==="ph")prPh=v;else prGrp=v;render()};
 function renderPrintList(c){
   if(!CATS[c])return "";
   const rows=filterRows(c).sort((a,b)=>REGIONS.indexOf(a.region)-REGIONS.indexOf(b.region)||String(a.commune||"").localeCompare(String(b.commune||""),"ar")||String(a.city||a.quarter||"").localeCompare(String(b.city||b.quarter||""),"ar")||String(a.name).localeCompare(String(b.name),"ar"));
   const v=rows.filter(x=>x.status==="verified").length,showPh=prPh&&isAdmin();
-  const fl=[filt.region?tv(filt.region):t("prAll"),filt.commune&&tv(filt.commune),filt.city,filt.level&&tv(filt.level),filt.status==="verified"?"✅ "+t("verified"):filt.status==="pending"?"🕓 "+t("pending"):t("allStatus"),filt.q&&"«"+filt.q+"»"].filter(Boolean).join(" › ");
+  const fl=[filt.region?tv(filt.region):t("prAll"),filt.arrond&&tv(filt.arrond),filt.commune&&tv(filt.commune),filt.city,filt.level&&tv(filt.level),filt.status==="verified"?"✅ "+t("verified"):filt.status==="pending"?"🕓 "+t("pending"):t("allStatus"),filt.q&&"«"+filt.q+"»"].filter(Boolean).join(" › ");
   const head=`<tr><th>#</th><th>${t("codeL")}</th><th>${t("name")}</th>${prGrp?"":`<th>${t("region")}</th>`}<th>${t("prPlace")}</th><th>${t("prResp")}</th>${showPh?`<th>${L(TAIL[0].l)}</th>`:""}<th></th></tr>`;
   const row=(x,i)=>`<tr><td class="num">${i+1}</td><td dir="ltr" class="cd">${esc(x.code||"")}</td><td><b>${esc(x.name)}</b></td>${prGrp?"":`<td>${esc(tv(x.region||""))}${x.commune?" · "+esc(tv(x.commune)):""}</td>`}<td>${esc(placeOf(x))}</td><td>${esc(respOf(x))}</td>${showPh?`<td dir="ltr">${esc(phones[pkey(c,x.id)]||"")}</td>`:""}<td>${x.status==="verified"?"✅":"🕓"}</td></tr>`;
   let body="";
@@ -1925,7 +1996,7 @@ function renderPrintList(c){
      <div class="count">${t("prFilt")}: ${esc(fl)} · ${t("prDate")}: ${dfmt(new Date().toISOString())}</div></div><img src="mali-flag.svg" alt="" class="fl"></div>
     <div class="prtot">${t("prTot",{n:fmt(rows.length),v:fmt(v),p:fmt(rows.length-v)})}</div>
     ${rows.length?body:`<div class="empty">${t("noMatch")}</div>`}
-    <div class="prft">csm-dalil.netlify.app — ${esc(L(["دليل المؤسسات السنية في مالي","Annuaire des institutions sunnites du Mali"]))}</div></div>`}
+    <div class="prft">youssoufsid.github.io/csm-dalil — ${esc(L(["دليل المؤسسات السنية في مالي","Annuaire des institutions sunnites du Mali"]))}</div></div>`}
 
 /* ================= الأخبار ================= */
 Object.assign(S,{
@@ -1978,7 +2049,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="25";
+const APP_VERSION="26";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
