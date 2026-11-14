@@ -595,15 +595,15 @@ function renderWaiting(){
 }
 
 /* ================= الإطار ================= */
-const TITLES={gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
+const TITLES={quick:"quick",numbers:"numbers",mrep:"mrep",gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
 function renderSide(){
   const pu=users.filter(u=>u.role==="pending").length;
   const a=(k,ic,l,extra="")=>`<a href="#${k}" class="${view===k||(k==="regions"&&view.startsWith("region/"))||(k==="news"&&view.startsWith("news/"))?"on":""}"><span class="ic">${ic}</span>${l}${extra}</a>`;
   let h=`<div class="grp">${t("gMain")}</div>`+a("home","🏠",t("home"))+a("news","📰",t("news"),news.length?`<span class="cnt">${fmt(news.length)}</span>`:"")+a("stats","📊",t("stats"));
   if(canOffices())h+=`<div class="grp">${t("gOrg")}</div>`+a("offices",CATS.offices.ic,cl("offices"),`<span class="cnt">${fmt(data.offices.length)}</span>`)+(offAll()?"":`<div class="hint" style="padding:0 16px 6px">🔒 ${t("offScope",{r:tv(me.region)})}</div>`);
   h+=`<div class="grp">${t("gDir")}</div>`+ORDER.filter(c=>c!=="offices").map(c=>a(c,CATS[c].ic,cl(c),`<span class="cnt">${fmt(data[c].length)}</span>`)).join("");
-  h+=`<div class="grp">${t("gBrowse")}</div>`+a("map","📍",t("map"))+a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:"")+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav"));
-  h+=`<div class="grp">${t("gAdmin")}</div>`+a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("import","📥",t("import")):"")+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):"");
+  h+=`<div class="grp">${t("gBrowse")}</div>`+a("map","📍",t("map"))+a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:"")+a("numbers","🔢",t("numT"))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav"));
+  h+=`<div class="grp">${t("gAdmin")}</div>`+a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):"")+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):"");
   $("#nav").innerHTML=h;
   const rl=me.role==="guest"?t("rGuest"):me.owner?"👑 "+t("ownerL"):isAdmin()?t("rAdmin"):isRegAdmin()?"🛡️ "+L(ROLES.regadmin)+" · "+tv(me.region||""):canWrite()?t("rContrib"):t("rViewer");
   $("#who").innerHTML=`<b>${esc(me.name||"")}</b>${rl}`;
@@ -830,7 +830,7 @@ APP.bulkVerify=async c=>{const ids=(window._lastRows||[]).filter(x=>x.status!=="
   logAct("verify",c,"",n+" × "+cl(c),null);toast(t("bvDone",{n:fmt(n)}))};
 APP.goPending=c=>{const go=()=>{filt.status="pending";filt.region="";filt.arrond="";filt.commune="";filt.city="";render()};if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
 function render(){
-  syncBadge();document.body.classList.toggle("pc",view.startsWith("cardv/")||view.startsWith("cardsp/"));document.body.classList.toggle("pl",view.startsWith("print/")||view==="gaps"||view.startsWith("qrs/"));
+  syncBadge();document.body.classList.toggle("pc",view.startsWith("cardv/")||view.startsWith("cardsp/"));document.body.classList.toggle("pl",view.startsWith("print/")||view==="gaps"||view==="mrep"||view==="numbers"||view.startsWith("qrs/"));
   if(view.startsWith("verify/")&&store){renderVerify(view.slice(7));return}
   if(!me)return;
   if(!canRead()){renderWaiting();return}
@@ -840,13 +840,14 @@ function render(){
   if(!_splashed){_splashed=true;splash(me.role==="guest"?null:me.name)}
   renderSide();
   const main=$("#main");
+  if(view==="quick"&&$("#qk_n"))return; // لا نمسح ما يكتبه المندوب عند وصول تحديثات البيانات
   if(view==="settings")setTimeout(()=>typeof sigPrev==="function"&&sigPrev(),0);
   if(view.startsWith("print/")){main.innerHTML=renderPrintList(view.slice(6));return}
   if(view.startsWith("qrs/")){main.innerHTML=renderQrSheet(view.slice(4));afterQrSheet();return}
   if(view.startsWith("cardsp/")){const k=view.slice(7);main.innerHTML=renderCardsPrint(k);afterCardsPrint(k);return}
   if(view.startsWith("cardv/")){const id=view.slice(6);main.innerHTML=renderCardView(id);afterCardView(id);return}
   if(view.startsWith("card/")){const[,c,id]=view.split("/");main.innerHTML=renderCard(c,id);afterCard(c,id);return}
-  const R={gaps:renderGaps,reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
+  const R={quick:renderQuick,numbers:renderNumbers,mrep:renderMonthRep,gaps:renderGaps,reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
   const body=view.startsWith("news/")?renderNews(view.slice(5)):view.startsWith("region/")?renderRegion(+view.split("/")[1],view.split("/").slice(2).join("/")||undefined):R[view]?R[view]():CATS[view]?renderList(view):renderHome();
   main.innerHTML=banner()+body;
   if(view==="map")afterMap();
@@ -2215,13 +2216,15 @@ Object.assign(S,{
 });
 let gapR="",gapT="";
 APP.gapSet=(k,v)=>{if(k==="r")gapR=v;else gapT=v;render()};
-const GAPK=[["gps","gGps"],["place","gPlace"],["resp","gResp"],["phone","gPhone"]];
+const GAPK=[["gps","gGps"],["place","gPlace"],["resp","gResp"],["phone","gPhone"],["stale","gStale"]];
 function gapsOf(c,x){
   const g=[];
   if(!parseGps(x.gps))g.push("gps");
   if(x.region===BAMAKO?!(x.commune||x.quarter):!(x.commune||x.city))g.push("place");
   if(c!=="duat"&&!respOf(x))g.push("resp");
   if(isAdmin()&&!phones[pkey(c,x.id)])g.push("phone");
+  const d=x.updatedAt||x.verifiedAt||x.createdAt;
+  if(d&&Date.now()-new Date(d).getTime()>365*864e5)g.push("stale");
   return g}
 function renderGaps(){
   if(!(isAdmin()||isRegAdmin()))return `<div class="empty">${t("askAdm")}</div>`;
@@ -2269,6 +2272,95 @@ function renderQrSheet(c){
 async function afterQrSheet(){
   try{await loadScript("lib/qrcode.js")}catch(e){return}
   document.querySelectorAll(".qrc[data-u]").forEach(el=>{try{const q=window.qrcode(0,"M");q.addData(el.dataset.u);q.make();el.innerHTML=q.createSvgTag({cellSize:4,margin:2});el.removeAttribute("data-u")}catch(e){}})}
+/* ====== زيادات: الإدخال السريع للمندوب · الدليل في أرقام · ملخص الشهر ====== */
+Object.assign(S,{
+ qkT:["إدخال سريع","Saisie rapide"],quick:["إدخال سريع","Saisie rapide"],
+ qkHint:["شاشة مبسّطة للميدان: اكتب الاسم، واضغط «موقعي»، والتقط صورة، ثم احفظ. تبقى الفئة والإقليم والحي كما هي للمؤسسة التالية.","Écran simplifié : nom, « Ma position », photo, puis enregistrer. Catégorie, région et lieu sont conservés pour la fiche suivante."],
+ qkCat:["الفئة","Catégorie"],qkName:["اسم المؤسسة","Nom"],qkPlace:["الحي أو القرية","Quartier ou village"],qkPhone:["هاتف المسؤول (اختياري)","Téléphone du responsable (facultatif)"],
+ qkGps:["📍 موقعي","📍 Ma position"],qkPhoto:["📷 صورة","📷 Photo"],qkSave:["💾 حفظ وإضافة التالي","💾 Enregistrer et suivant"],
+ qkNeed:["اكتب الاسم واختر الإقليم","Nom et région obligatoires"],qkCount:["حُفظ في هذه الجلسة: {n}","Enregistrées : {n}"],qkGot:["✅ تم تحديد الموقع","✅ Position prise"],
+ numT:["الدليل في أرقام","L'annuaire en chiffres"],numbers:["الدليل في أرقام","L'annuaire en chiffres"],
+ numNote:["أرقام المؤسسات الموثقة فقط، دون أسماء أشخاص أو هواتف.","Fiches vérifiées uniquement, sans noms de personnes ni téléphones."],
+ numTot:["المجموع","Total"],numReg:["حسب الإقليم","Par région"],numShare:["📤 مشاركة الأرقام","📤 Partager"],
+ mrepT:["ملخص الشهر","Bilan du mois"],mrep:["ملخص الشهر","Bilan du mois"],
+ mrNew:["مسجّلة هذا الشهر","Enregistrées ce mois"],mrVer:["وُثّقت هذا الشهر","Vérifiées ce mois"],mrPen:["بانتظار التوثيق الآن","En attente"],mrGap:["فيها نقص","Incomplètes"],
+ mrRep:["ملاحظات واردة","Remarques reçues"],mrRepD:["عولجت منها","traitées"],mrepTotal:["إجمالي المؤسسات","Total des fiches"],mrepMonth:["الشهر","Mois"],
+ gStale:["لم تُحدَّث منذ سنة","Non mise à jour depuis 1 an"]
+});
+const mosqueCats=()=>ORDER.filter(c=>c!=="offices");
+/* ---------- الإدخال السريع ---------- */
+let qkN=0,qkPhoto=null;
+function renderQuick(){
+  if(!canWrite()||me.role==="guest")return `<div class="empty">${t("askAdm")}</div>`;
+  const last=ls.get("csm-lastloc",{})||{},cat=ls.get("csm-quick-cat","mosques"),fixed=!isAdmin()&&me.region;
+  const reg=fixed?me.region:(last.region||"");
+  return `<div class="sec"><h2>⚡ ${t("qkT")}</h2><div class="hint">${t("qkHint")}</div>
+   <div class="fg" style="margin-top:10px">
+    <div class="full"><label>${t("qkCat")}</label><select id="qk_c" onchange="APP.qkCat(this.value)">${mosqueCats().map(c=>`<option value="${c}" ${c===cat?"selected":""}>${CATS[c].ic} ${esc(cl(c))}</option>`).join("")}</select></div>
+    <div class="full"><label>${t("qkName")} <b>*</b></label><input id="qk_n" autocomplete="off" style="font-size:18px"></div>
+    <div><label>${t("region")} <b>*</b></label><select id="qk_r" ${fixed?"disabled":""}><option value="">${t("choose")}</option>${REGIONS.map(r=>`<option value="${esc(r)}" ${reg===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select></div>
+    <div><label>${t("qkPlace")}</label><input id="qk_p" value="${esc(last.quarter||"")}" autocomplete="off"></div>
+    <div class="full"><label>${t("qkPhone")}</label><input id="qk_t" type="tel" dir="ltr" autocomplete="off"></div>
+   </div>
+   <div class="tools" style="margin-top:10px"><button class="bg" type="button" onclick="APP.qkGps()">${t("qkGps")}</button>
+    <label class="bs btnl" style="cursor:pointer">${t("qkPhoto")}<input type="file" accept="image/*" capture="environment" hidden onchange="APP.qkPh(this)"></label>
+    <span class="count" id="qk_i"></span></div>
+   <div class="err" id="qk_e"></div>
+   <div class="tools"><button class="bp" style="font-size:17px;padding:13px 26px" onclick="APP.qkSave()">${t("qkSave")}</button><span class="count" id="qk_k">${qkN?t("qkCount",{n:fmt(qkN)}):""}</span></div></div>`}
+let qkGpsV="";
+APP.qkCat=v=>ls.set("csm-quick-cat",v);
+APP.qkGps=()=>{if(!navigator.geolocation){toast(t("gpsNo"));return}
+  $("#qk_i").textContent=t("gpsWait");
+  navigator.geolocation.getCurrentPosition(p=>{qkGpsV=p.coords.latitude.toFixed(5)+", "+p.coords.longitude.toFixed(5);$("#qk_i").textContent=t("qkGot")+" ("+fmt(Math.round(p.coords.accuracy))+" m)"},()=>{$("#qk_i").textContent=t("gpsErr")},{enableHighAccuracy:true,timeout:20000})};
+APP.qkPh=async inp=>{const f=inp.files&&inp.files[0];inp.value="";if(!f)return;try{qkPhoto=await compressImage(f);$("#qk_i").textContent=(qkGpsV?"📍 ":"")+"📷 ✓"}catch(e){}};
+APP.qkSave=async()=>{
+  const c=$("#qk_c").value,name=$("#qk_n").value.trim(),region=$("#qk_r").value||(me.region||""),place=$("#qk_p").value.trim(),ph=$("#qk_t").value.trim();
+  if(!name||!region){$("#qk_e").textContent=t("qkNeed");return}
+  $("#qk_e").textContent="";
+  const now=new Date().toISOString(),o={name,region,status:"pending",createdAt:now,updatedAt:now,createdBy:me.uid,createdByName:me.name,updatedBy:me.uid,updatedByName:me.name};
+  if(place){if(region===BAMAKO){o.quarter=place;if(Q_ARR[place])o.arrond=Q_ARR[place]}else o.city=place}
+  if(qkGpsV)o.gps=qkGpsV;if(qkPhoto)o.hasPhoto=true;
+  if(c==="duat")o.gender=o.gender||"";
+  const id=newId();ls.set("csm-quick-cat",c);ls.set("csm-lastloc",{region,quarter:place});
+  try{await store.save(c,id,o);if(ph)await store.savePhone(c,id,ph);if(qkPhoto)await store.savePhoto(pkey(c,id),qkPhoto);
+    logAct("add",c,id,name,null);ls.set("csm-lastloc",{region,quarter:place});qkN++;qkGpsV="";qkPhoto=null;
+    toast(navigator.onLine?t("saved"):t("savedOffline"));
+    $("#qk_n").value="";$("#qk_t").value="";$("#qk_i").textContent="";$("#qk_k").textContent=t("qkCount",{n:fmt(qkN)});$("#qk_n").focus()
+  }catch(e){$("#qk_e").textContent=errMsg(e)}};
+/* ---------- الدليل في أرقام (عام) ---------- */
+function numData(){
+  const cats=mosqueCats(),rows=allRows().filter(({c,x})=>c!=="offices"&&x.status==="verified");
+  const byC={},byR={};cats.forEach(c=>byC[c]=0);
+  rows.forEach(({c,x})=>{byC[c]++;const r=x.region||"—";(byR[r]=byR[r]||{})[c]=((byR[r]||{})[c]||0)+1});
+  return {cats,byC,byR,total:rows.length}}
+APP.numShare=()=>{const d=numData();const lines=d.cats.filter(c=>d.byC[c]).map(c=>`${CATS[c].ic} ${cl(c)}: ${fmt(d.byC[c])}`);
+  open("https://wa.me/?text="+encodeURIComponent(`${t("numT")} — ${t("appName")}\n${lines.join("\n")}\n${t("numTot")}: ${fmt(d.total)}\n${location.origin+location.pathname}`),"_blank","noopener")};
+function renderNumbers(){
+  const d=numData(),regs=REGIONS.filter(r=>d.byR[r]),mx=Math.max(1,...regs.map(r=>Object.values(d.byR[r]).reduce((a,b)=>a+b,0)));
+  return `<div class="sec"><h2>🔢 ${t("numT")}</h2><div class="hint">${t("numNote")}</div>
+   <div class="numg">${d.cats.map(c=>`<div class="numc"><span>${CATS[c].ic}</span><b>${fmt(d.byC[c])}</b><small>${esc(cl(c))}</small></div>`).join("")}<div class="numc tot"><span>Σ</span><b>${fmt(d.total)}</b><small>${t("numTot")}</small></div></div>
+   <h3 style="margin-top:16px">${t("numReg")}</h3>
+   ${regs.length?regs.map(r=>{const n=Object.values(d.byR[r]).reduce((a,b)=>a+b,0);return `<div class="nrow"><span class="nl">${esc(tv(r))}</span><span class="nb"><i style="width:${Math.max(3,Math.round(n/mx*100))}%"></i></span><b>${fmt(n)}</b></div>`}).join(""):`<div class="empty">—</div>`}
+   <div class="tools noprint" style="margin-top:12px"><button class="bs" onclick="APP.numShare()">${t("numShare")}</button><button class="bp" onclick="print()">${t("prGo")}</button></div></div>`}
+/* ---------- ملخص الشهر ---------- */
+let mrepMonth=new Date().toISOString().slice(0,7);
+APP.mrepSet=v=>{mrepMonth=v||mrepMonth;render()};
+function renderMonthRep(){
+  if(!(isAdmin()||isRegAdmin()))return `<div class="empty">${t("askAdm")}</div>`;
+  const reg=isAdmin()?"":(me.region||""),m=mrepMonth;
+  const all=allRows().filter(({c,x})=>c!=="offices"&&(!reg||x.region===reg));
+  const inM=v=>String(v||"").startsWith(m);
+  const sum=rs=>({n:rs.length,nw:rs.filter(({x})=>inM(x.createdAt)).length,vf:rs.filter(({x})=>inM(x.verifiedAt)).length,pd:rs.filter(({x})=>x.status!=="verified").length,gp:rs.filter(({c,x})=>gapsOf(c,x).some(k=>k!=="stale")).length});
+  const tot=sum(all);
+  const reps=reports.filter(r=>inM(r.at)&&(!reg||r.region===reg)),repD=reps.filter(r=>r.status==="done").length;
+  const regs=[...new Set(all.map(({x})=>x.region||"—"))].sort((a,b)=>REGIONS.indexOf(a)-REGIONS.indexOf(b));
+  const rowR=r=>{const s=sum(all.filter(({x})=>(x.region||"—")===r));return `<tr><td><b>${esc(tv(r))}</b></td><td class="num">${fmt(s.n)}</td><td class="num">${fmt(s.nw)}</td><td class="num">${fmt(s.vf)}</td><td class="num">${fmt(s.pd)}</td><td class="num">${fmt(s.gp)}</td></tr>`};
+  const kp=(l,v)=>`<div class="numc"><b>${fmt(v)}</b><small>${l}</small></div>`;
+  return `<div class="tools noprint"><label>${t("mrepMonth")}: <input type="month" value="${esc(m)}" onchange="APP.mrepSet(this.value)"></label><button class="bp" onclick="print()">${t("prGo")}</button></div>
+   <div class="prdoc"><div class="prhd"><img src="logo.png" alt=""><div><b>${esc(L(["تجمع أهل السنة والجماعة في مالي","Communauté Sunnite du Mali (CSM)"]))}</b><h2>🗓️ ${t("mrepT")} — ${esc(m)}${reg?" — "+esc(tv(reg)):""}</h2><div class="count">${t("prDate")}: ${dfmt(new Date().toISOString())}</div></div><img src="mali-flag.svg" alt="" class="fl"></div>
+   <div class="numg">${kp(t("mrepTotal"),tot.n)}${kp(t("mrNew"),tot.nw)}${kp(t("mrVer"),tot.vf)}${kp(t("mrPen"),tot.pd)}${kp(t("mrGap"),tot.gp)}${kp(t("mrRep")+" ("+t("mrRepD")+" "+fmt(repD)+")",reps.length)}</div>
+   <table class="prt" style="margin-top:14px"><thead><tr><th>${t("region")}</th><th>${t("mrepTotal")}</th><th>${t("mrNew")}</th><th>${t("mrVer")}</th><th>${t("mrPen")}</th><th>${t("mrGap")}</th></tr></thead><tbody>${regs.map(rowR).join("")||`<tr><td colspan="6">—</td></tr>`}</tbody></table>
+   <div class="prft">youssoufsid.github.io/csm-dalil — ${esc(L(["دليل المؤسسات السنية في مالي","Annuaire des institutions sunnites du Mali"]))}</div></div>`}
 
 /* ================= الأخبار ================= */
 Object.assign(S,{
@@ -2321,7 +2413,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="30";
+const APP_VERSION="31";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
