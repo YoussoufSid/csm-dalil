@@ -1,0 +1,113 @@
+rules_version = '2';
+// قواعد أمان «دليل المؤسسات السنية في مالي» — الإصدار الحادي عشر (+ ملاحظات المستخدمين) (صلاحية مطلقة للمالك + مكاتب التجمع + اللجنة الإدارية + البطاقات)
+// الأدوار: pending · viewer · contributor · regadmin (مشرف إقليم) · admin (مشرف عام)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isOwner() {
+      return signedIn()
+        && request.auth.token.email == "sidibey487@gmail.com"
+        && request.auth.token.email_verified == true;
+    }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function hasProfile() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function isAdmin()   { return isOwner() || (hasProfile() && me().role == 'admin'); }
+    function isRegAdmin(r) { return hasProfile() && me().role == 'regadmin' && me().region == r; }
+    function isContrib() { return isAdmin() || (hasProfile() && me().role in ['contributor','regadmin']); }
+    function isViewer()  { return isContrib() || (hasProfile() && me().role == 'viewer'); }
+    function isCat(c) { return c in ['mosques','schools','centers','duat','assoc','media']; }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid && request.resource.data.role == 'pending'
+        && request.resource.data.get('email','') == request.auth.token.get('email','')
+        && !('region' in request.resource.data) && !('adminCommittee' in request.resource.data);
+      // الصلاحية المطلقة للمالك: هو وحده يمنح صفة «مشرف عام» أو ينزعها، ولا يملك أحد تعديل حساب مشرف عام غيره
+      allow update: if isOwner()
+        || (isAdmin() && resource.data.role != 'admin' && request.resource.data.role != 'admin')
+        || (request.auth.uid == uid && request.resource.data.role == resource.data.role
+            && request.resource.data.get('region','') == resource.data.get('region','')
+            && request.resource.data.get('adminCommittee',false) == resource.data.get('adminCommittee',false));
+      allow delete: if isOwner() || (isAdmin() && resource.data.role != 'admin');
+    }
+    match /contacts/{id} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isContrib();
+    }
+    // الإعدادات العامة: يقرؤها الجميع، ويعدّلها المشرف العام
+    match /config/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // عدّادات الأرقام الخاصة بالسجلات (KLK-M-0012…): يقرؤها المستخدمون، ويحجزها المشرف العام
+    match /counters/{id} {
+      allow read: if isViewer();
+      allow write: if isAdmin() && request.resource.data.n is int
+        && request.resource.data.n > (resource == null ? 0 : resource.data.get('n', 0));
+    }
+    // ملاحظات المستخدمين (إبلاغ/اقتراح): يكتبها أي زائر بقيود صارمة، ويقرؤها المشرف العام ومشرف الإقليم المختص فقط
+    match /reports/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['cat','ref','name','region','type','text','contact','by','byName','at','status'])
+        && request.resource.data.status == 'new'
+        && request.resource.data.text is string && request.resource.data.text.size() >= 5 && request.resource.data.text.size() <= 800
+        && request.resource.data.get('contact','') is string && request.resource.data.get('contact','').size() <= 80
+        && request.resource.data.get('name','') is string && request.resource.data.get('name','').size() <= 160;
+      allow read, update: if isAdmin() || isRegAdmin(resource.data.region);
+      allow delete: if isAdmin();
+    }
+    // سجل التعديلات: يُكتب ولا يُعدَّل
+    match /logs/{id} {
+      allow create: if isContrib();
+      allow read: if isAdmin();
+    }
+    // الأخبار: يقرؤها الجميع، وينشرها المشرف العام
+    match /news/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // صور المؤسسات
+    match /photos/{id} {
+      allow read: if true;
+      allow create, update: if isContrib() && request.resource.data.data is string
+        && request.resource.data.data.size() < 900000
+        && request.resource.data.data.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$');
+      allow delete: if isContrib();
+    }
+    // مكاتب التجمع: المشرف العام يرى كل المكاتب، ومشرف الإقليم والمندوب يريان مكاتب منطقتهما فقط
+    function myZone(r) {
+      return hasProfile() && me().role in ['regadmin','contributor']
+        && me().get('region','') != '' && me().region == r;
+    }
+    match /offices/{id} {
+      // أعضاء اللجنة الإدارية يطّلعون على جميع المكاتب
+      allow read: if isAdmin() || myZone(resource.data.region)
+        || (hasProfile() && me().role in ['viewer','contributor','regadmin'] && me().get('adminCommittee', false) == true);
+      allow create: if (isAdmin() || myZone(request.resource.data.region))
+        && request.resource.data.name is string
+        && request.resource.data.status == 'pending';
+      allow update: if isAdmin()
+        || (myZone(resource.data.region) && myZone(request.resource.data.region)
+            && (isRegAdmin(resource.data.region)
+                || (request.resource.data.status == 'pending' && !('verifiedBy' in request.resource.data))));
+      allow delete: if isAdmin() || isRegAdmin(resource.data.region);
+    }
+    // البطاقات: التحقق من بطاقة برقمها متاح للجميع (get)، أما سرد البطاقات فللإدارة فقط
+    match /cards/{id} {
+      allow get: if true;
+      allow list: if isAdmin() || (hasProfile() && me().role == 'regadmin' && resource.data.region == me().region);
+      allow create: if isAdmin() || isRegAdmin(request.resource.data.region);
+      allow update: if isAdmin() || (isRegAdmin(resource.data.region) && isRegAdmin(request.resource.data.region));
+      allow delete: if isAdmin();
+    }
+    match /{cat}/{id} {
+      allow read: if isCat(cat) && (isViewer() || resource.data.status == 'verified');
+      allow create: if isCat(cat) && isContrib()
+        && request.resource.data.name is string
+        && request.resource.data.status == 'pending';
+      allow update: if isCat(cat) && isContrib()
+        && (isAdmin() || isRegAdmin(resource.data.region)
+            || (request.resource.data.status == 'pending' && !('verifiedBy' in request.resource.data)));
+      allow delete: if isCat(cat) && (isAdmin() || isRegAdmin(resource.data.region));
+    }
+  }
+}
