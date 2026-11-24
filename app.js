@@ -587,10 +587,9 @@ const navOpen={};APP.nt=(id,o)=>{navOpen[id]=o};
 function renderSide(){
   const pu=users.filter(u=>u.role==="pending").length;
   const a=(k,ic,l,extra="")=>`<a href="#${k}" class="${view===k||(k==="regions"&&view.startsWith("region/"))||(k==="news"&&view.startsWith("news/"))?"on":""}"><span class="ic">${ic}</span>${l}${extra}</a>`;
-  let h=`<div class="grp">${t("gMain")}</div>`+a("home","🏠",t("home"))+a("news","📰",t("news"),news.length?`<span class="cnt">${fmt(news.length)}</span>`:"")+a("stats","📊",t("stats"));
+  let h=`<div class="grp">${t("gMain")}</div>`+a("home","🏠",t("home"))+a("news","📰",t("news"),news.length?`<span class="cnt">${fmt(news.length)}</span>`:"")+a("stats","📊",t("stats"))+a("map","📍",t("map"))+a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:"");
   if(canOffices())h+=`<div class="grp">${t("gOrg")}</div>`+a("offices",CATS.offices.ic,cl("offices"),`<span class="cnt">${fmt(data.offices.length)}</span>`)+(offAll()?"":`<div class="hint" style="padding:0 16px 6px">🔒 ${t("offScope",{r:tv(me.region)})}</div>`);
   h+=`<div class="grp">${t("gDir")}</div>`+ORDER.filter(c=>c!=="offices").map(c=>a(c,CATS[c].ic,cl(c),`<span class="cnt">${fmt(data[c].length)}</span>`)).join("");
-  h+=`<div class="grp">${t("gBrowse")}</div>`+a("map","📍",t("map"))+a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:"");
   // مجموعتا «المزيد» و«الإدارة» مطويتان افتراضياً، وتنفتحان تلقائياً إن كانت الصفحة الحالية فيهما
   const det=(id,title,keys,inner)=>{if(!inner)return "";const on=navOpen[id]!==undefined?navOpen[id]:keys.includes(view);return `<details class="ngrp" ${on?"open":""} ontoggle="APP.nt('${id}',this.open)"><summary class="grp" style="cursor:pointer;list-style:none">${title} ▾</summary>${inner}</details>`};
   h+=det("more",t("gMore"),["numbers","ask","about","privacy"],a("numbers","🔢",t("numT"))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
@@ -671,11 +670,9 @@ function renderHome(){
   h+=homeNews();
   h+=`<div class="sech"><h3>${t("sections")}</h3><a href="#stats">${t("stats")} ${LANG==="fr"?"→":"←"}</a></div><div class="qgrid">`+
     ORDER.filter(c=>data[c].length).map(c=>`<div class="qt" onclick="location.hash='${c}'"><span class="ic">${CATS[c].ic}</span><span class="n">${fmt(data[c].length)}</span><span class="l">${cl(c)}</span><span class="s">${S2[c]}</span></div>`).join("")+`</div>`+(()=>{const z=ORDER.filter(c=>!data[c].length);return z.length?`<div class="zchips"><span class="count">${t("emptyCats")}</span> ${z.map(c=>canWriteC(c)?`<button class="chip" onclick="APP.form('${c}')">＋ ${CATS[c].ic} ${co(c)}</button>`:`<span class="chip">${CATS[c].ic} ${cl(c)}</span>`).join("")}</div>`:""})();
-  const rec=allRows().sort((a,b)=>String(b.x.createdAt||"").localeCompare(String(a.x.createdAt||""))).slice(0,6);
+  const rec=allRows().sort((a,b)=>String(b.x.createdAt||"").localeCompare(String(a.x.createdAt||""))).slice(0,4);
   if(me.uid&&canWrite()){const mine=allRows().filter(({x})=>x.createdBy===me.uid).length;if(mine)h+=`<div class="banner" style="margin-top:14px;background:var(--g3);border-color:#cfe5d8;color:var(--g)">✍️ ${t("myEntries")}: <b>${fmt(mine)}</b></div>`}
   h+=`<div class="sech"><h3>${t("recent")}</h3></div>`+(rec.length?`<div class="list">${rec.map(({c,x})=>card(c,x,true)).join("")}</div>`:`<div class="sec empty">${t("noData")}${canWrite()?`<div style="margin-top:12px"><button class="bp" onclick="APP.pick()">${t("addInst")}</button></div>`:""}</div>`);
-  const top=REGIONS.map((r,i)=>({r,i,n:cntIn(x=>x.region===r)})).filter(x=>x.n).sort((a,b)=>b.n-a.n).slice(0,4);
-  if(top.length)h+=`<div class="sech"><h3>${t("topRegions")}</h3><a href="#regions">${t("seeAll")} ${LANG==="fr"?"→":"←"}</a></div><div class="rgrid">${top.map(z=>regionCard(z)).join("")}</div>`;
   return h;
 }
 APP.pick=()=>{
@@ -929,7 +926,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
       if(v==="مكتب مدينة / قرية"&&!o.city&&bad("city",t("fill")+t("cityL")))return}
     if(c==="offices"){o.struct=structCollect()||{};o.president=(o.struct.pres&&o.struct.pres.n)||"";o.people=structCount(o.struct)}
     if(o.region===BAMAKO)o.city="";
-    const dup=data[c].find(r=>r.id!==id&&r.region===o.region&&String(r.name).trim()===o.name);
+    const nn=s=>nz(String(s||"").replace(/\s+/g," ")),dup=data[c].find(r=>r.id!==id&&r.region===o.region&&nn(r.name)===nn(o.name)&&(!r.quarter&&!o.quarter||nn(r.quarter)===nn(o.quarter))&&(!r.city&&!o.city||nn(r.city)===nn(o.city)));
     if(dup&&!e.target.dataset.ok){$("#ferr").textContent=t("dup");e.target.dataset.ok=1;return}
     const now=new Date().toISOString();
     if(x.code)o.code=x.code;
@@ -1233,7 +1230,8 @@ APP.impFile=async file=>{
 APP.impGo=async()=>{
   const t0=Date.now();let n=0,k=0;
   for(const r of impRows){const {__ph,...o}=r;
-    if(data[impCat].some(x=>String(x.name).trim()===o.name&&(x.region||"")===(o.region||"")&&(x.quarter||"")===(o.quarter||""))){k++;continue}
+    const nn=s=>nz(String(s||"").replace(/\s+/g," "));
+    if(data[impCat].some(x=>nn(x.name)===nn(o.name)&&(x.region||"")===(o.region||"")&&nn(x.quarter)===nn(o.quarter)&&nn(x.city)===nn(o.city))){k++;continue}
     const now=new Date(t0+n).toISOString();const id=newId();await store.save(impCat,id,{...o,status:"pending",createdAt:now,updatedAt:now,createdBy:me.uid,createdByName:me.name,updatedBy:me.uid,updatedByName:me.name});if(__ph)await store.savePhone(impCat,id,__ph);n++}
   logAct("import",impCat,"",n+" × "+cl(impCat),null);
   toast(t("impDone",{n:fmt(n)})+(k?" · "+t("impSkip",{n:fmt(k)}):""));impRows=[];location.hash=impCat;
@@ -1244,17 +1242,18 @@ function renderSettings(){
   if(!isAdmin())return `<div class="empty">${t("adminOnly")}</div>`;
   const s=CONFIG.site||{};const lists=(CONFIG.lists&&CONFIG.lists.communes)||{};
   const inp=(k,l)=>`<div><label>${l}</label><input id="s_${k}" value="${esc(s[k]||"")}" ${k!=="address"?'dir="ltr"':""}></div>`;
+  const sm=(ic,ttl)=>`<summary style="cursor:pointer;font-weight:700;padding:12px 4px;font-size:16px">${ic} ${L(ttl)}</summary>`;
   return `<div class="banner">${t("setIntro")}</div>
-  <div class="sec"><h2>ℹ️ ${t("about")}</h2><label>${t("aboutText")}</label><textarea id="s_about" rows="6">${esc(s.about||"")}</textarea>
+  <details open>${sm("🏢",["بيانات التجمع والتواصل","Informations et contact"])}<div class="sec"><h2>ℹ️ ${t("about")}</h2><label>${t("aboutText")}</label><textarea id="s_about" rows="6">${esc(s.about||"")}</textarea>
    <div class="fg" style="margin-top:10px">${inp("phone",t("phoneL"))}${inp("whatsapp",t("whatsapp"))}${inp("email",t("emailL"))}${inp("facebook",t("facebook"))}<div class="full"><label>${t("addressL")}</label><input id="s_address" value="${esc(s.address||"")}"></div></div>
    <h3 style="margin-top:14px">🪪 ${t("setCards")}</h3><div class="fg"><div><label>${t("presName")}</label><input id="s_presName" value="${esc(s.presName||"")}"></div><div><label>${t("cardYearsL")}</label><input id="s_cardYears" type="number" min="1" max="10" value="${esc(s.cardYears||"2")}"></div></div>
-   <button class="bp" style="margin-top:10px" onclick="APP.saveSite()">${t("saveB")}</button></div>
-  <div class="sec"><h2>🏘️ ${t("communesT")}</h2><div class="hint">${t("communesHint")}</div>
+   <button class="bp" style="margin-top:10px" onclick="APP.saveSite()">${t("saveB")}</button></div></details>
+  <details>${sm("🏘️",["قوائم الدوائر","Listes des cercles"])}<div class="sec"><h2>🏘️ ${t("communesT")}</h2><div class="hint">${t("communesHint")}</div>
    <label style="margin-top:8px">${t("region")}</label><select id="s_reg" onchange="APP.showCommunes(this.value)">${REGIONS.filter(r=>r!==BAMAKO).map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select>
    <textarea id="s_comm" rows="7" style="margin-top:8px">${esc(officialCommunes(REGIONS[1]).join("\n"))}</textarea>
-   <button class="bp" style="margin-top:8px" onclick="APP.saveCommunes()">${t("saveB")}</button></div>
-  ${backupBox()}${renumBox()}${clnBox()}${unifyBox()}${sigBox()}
-  <div class="sec"><h2>💾 ${t("backupT")}</h2><div class="hint">${t("backupHint")}</div><button class="bp" style="margin-top:10px" onclick="APP.backup()">${t("backupBtn")}</button></div>`;
+   <button class="bp" style="margin-top:8px" onclick="APP.saveCommunes()">${t("saveB")}</button></div></details>
+  <details>${sm("🧰",["الصيانة والأدوات","Maintenance et outils"])}${backupBox()}${renumBox()}${clnBox()}${unifyBox()}${sigBox()}
+  <div class="sec"><h2>💾 ${t("backupT")}</h2><div class="hint">${t("backupHint")}</div><button class="bp" style="margin-top:10px" onclick="APP.backup()">${t("backupBtn")}</button></div></details>`;
 }
 /* ---- تنظيف حقل «القسم الإداري» القديم من السجلات ---- */
 const clnList=()=>ALLC.flatMap(c=>data[c].filter(x=>"arrond" in x).map(x=>[c,x]));
@@ -2410,7 +2409,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="33";
+const APP_VERSION="34";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
