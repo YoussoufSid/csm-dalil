@@ -284,7 +284,13 @@ Object.entries(CERCLES_RAW).forEach(([r,s])=>{CERCLES[r]=s.split("|").map(p=>{co
 Object.assign(S,{
  otherQ:["حي آخر (اكتب الاسم)","Autre quartier (saisir)"],
  nameFrL:["الاسم بالفرنسية (اختياري)","Nom en français (facultatif)"],
- gMore:["المزيد","Plus"]
+ gMore:["المزيد","Plus"],
+ clnT:["تنظيف بيانات «القسم الإداري» القديمة","Nettoyer l'ancien champ « arrondissement »"],
+ clnInfo:["أُلغي هذا الحقل في الإصدار 32. يحذف الزر القيمة القديمة المخزّنة من السجلات (لا يمسّ أي بيانات أخرى).","Ce champ a été supprimé en v32. Le bouton retire l'ancienne valeur des fiches (aucune autre donnée n'est modifiée)."],
+ clnB:["🧹 حذف القيم القديمة الآن","🧹 Supprimer les anciennes valeurs"],
+ clnNone:["لا توجد سجلات تحتوي القيمة القديمة ✅","Aucune fiche concernée ✅"],
+ clnQ:["سيُنظَّف {n} سجلاً. متابعة؟","{n} fiches seront nettoyées. Continuer ?"],
+ clnDone:["✅ نُظّف {n} سجلاً","✅ {n} fiches nettoyées"]
 });
 const QLAB=["الحي","Quartier"];
 const ARRONDS=["القسم الأول","القسم الثاني","القسم الثالث","القسم الرابع","القسم الخامس","القسم السادس","القسم السابع"];
@@ -1247,9 +1253,19 @@ function renderSettings(){
    <label style="margin-top:8px">${t("region")}</label><select id="s_reg" onchange="APP.showCommunes(this.value)">${REGIONS.filter(r=>r!==BAMAKO).map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select>
    <textarea id="s_comm" rows="7" style="margin-top:8px">${esc(officialCommunes(REGIONS[1]).join("\n"))}</textarea>
    <button class="bp" style="margin-top:8px" onclick="APP.saveCommunes()">${t("saveB")}</button></div>
-  ${backupBox()}${renumBox()}${unifyBox()}${sigBox()}
+  ${backupBox()}${renumBox()}${clnBox()}${unifyBox()}${sigBox()}
   <div class="sec"><h2>💾 ${t("backupT")}</h2><div class="hint">${t("backupHint")}</div><button class="bp" style="margin-top:10px" onclick="APP.backup()">${t("backupBtn")}</button></div>`;
 }
+/* ---- تنظيف حقل «القسم الإداري» القديم من السجلات ---- */
+const clnList=()=>ALLC.flatMap(c=>data[c].filter(x=>"arrond" in x).map(x=>[c,x]));
+const clnBox=()=>!isAdmin()||!clnList().length?"":`<div class="card"><h3>🧹 ${t("clnT")} (${fmt(clnList().length)})</h3><div class="hint">${t("clnInfo")}</div><button class="bs" onclick="APP.clnGo()">${t("clnB")}</button></div>`;
+APP.clnGo=async()=>{
+  const todo=clnList();if(!todo.length){toast(t("clnNone"));return}
+  if(!confirm(t("clnQ",{n:fmt(todo.length)})))return;
+  let n=0;
+  for(const [c,x] of todo){try{const {id,arrond,...o}=x;await store.save(c,id,o);n++}catch(e){}}
+  logAct("edit","settings","",n+" × arrond",null);toast(t("clnDone",{n:fmt(n)}));render();
+};
 APP.saveSite=()=>{const o={};["about","phone","whatsapp","email","facebook","address","presName","cardYears"].forEach(k=>o[k]=$("#s_"+k).value.trim());store.saveConfig("site",o);toast(t("saved"))};
 APP.showCommunes=r=>{$("#s_comm").value=officialCommunes(r).join("\n")};
 APP.saveCommunes=()=>{const r=$("#s_reg").value;const list=$("#s_comm").value.split("\n").map(z=>z.trim()).filter(Boolean);const all={...((CONFIG.lists&&CONFIG.lists.communes)||{})};all[r]=list;store.saveConfig("lists",{communes:all});toast(t("saved"))};
@@ -2394,7 +2410,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="32";
+const APP_VERSION="33";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
