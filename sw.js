@@ -1,5 +1,5 @@
 // Service worker: يجلب أحدث نسخة أولاً متى توفّر الإنترنت، ويستعمل النسخة المحفوظة دون اتصال
-const VERSION = "csm-v31";
+const VERSION = "csm-v32";
 const SHELL = [
   "./", "./index.html", "./app.js", "./firebase-config.js", "./manifest.webmanifest",
   "./logo.png","./mali-flag.svg","./lib/qrcode.js", "./mosque.jpg", "./gate.jpg",
