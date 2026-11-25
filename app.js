@@ -893,7 +893,7 @@ const dlg=$("#dlg");$("#dx").onclick=()=>dlg.close();
 function communesFor(region){const s=new Set(officialCommunes(region));allRows().forEach(({x})=>{if(x.commune&&(!region||x.region===region))s.add(x.commune)});return [...s].sort((a,b)=>a.localeCompare(b))}
 function inputFor(f,v,ctx){
   const id="f_"+f.k,req=f.req?"required":"";
-  if(f.t==="sel")return `<select id="${id}" ${req}><option value="">${t("choose")}</option>${f.o.map(o=>`<option value="${esc(o)}" ${v===o?"selected":""}>${esc(tv(o))}</option>`).join("")}</select>`;
+  if(f.t==="sel")return `<select id="${id}" ${req}><option value="">${t("choose")}</option>${((f.k==="region"&&!ctx.editing&&!isAdmin()&&me.region)?[me.region]:f.o).map(o=>`<option value="${esc(o)}" ${v===o?"selected":""}>${esc(tv(o))}</option>`).join("")}</select>`;
   if(f.t==="chk")return `<div class="chk" id="${id}">${f.o.map(o=>`<label><input type="checkbox" value="${esc(o)}" ${(v||[]).includes(o)?"checked":""}>${esc(tv(o))}</label>`).join("")}</div>`;
   if(f.t==="area")return `<textarea id="${id}" rows="3">${esc(v)}</textarea>`;
   if(f.t==="time")return `<input id="${id}" type="time" value="${esc(v)}" dir="ltr">`;
@@ -902,7 +902,7 @@ function inputFor(f,v,ctx){
   if(f.k==="quarter")return quarterInput(ctx.region,v);
   if(f.t==="gps")return `<div class="row"><input id="${id}" dir="ltr" placeholder="12.6392, -8.0029" value="${esc(v)}"><button type="button" class="bg" onclick="APP.locate()">${t("gpsBtn")}</button></div><div class="hint" id="gpsh">${t("gpsHint")}</div>`;
   if(f.t==="tel"){const hidden=ctx.editing&&!isAdmin();return `<input id="${id}" type="tel" dir="ltr" value="${esc(v)}" placeholder="${hidden?t("phoneHidden"):""}"><div class="hint">${t("phoneHint")}</div>`}
-  const mic=!f.t&&SR?`<button type="button" class="micb" title="${t("voice")}" onclick="APP.voice('${id}',this)">🎤</button>`:"";
+  const mic=!f.t&&SR&&f.k!=="name_fr"?`<button type="button" class="micb" title="${t("voice")}" onclick="APP.voice('${id}',this)">🎤</button>`:"";
   const ph=f.ph?`placeholder="${esc(L(f.ph))}"`:"";
   return mic?`<div class="row"><input id="${id}" value="${esc(v)}" ${ph} ${req}>${mic}</div>`:`<input id="${id}" ${f.t==="num"?'type="number" min="0" inputmode="numeric"':""} value="${esc(v)}" ${ph} ${req}>`;
 }
@@ -919,6 +919,8 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
   if(id&&c!=="offices"&&!canEditRec(x)){toast(L(["يمكنك تعديل سجلات إقليمك فقط","Vous ne pouvez modifier que les fiches de votre région"]));return}
   const last=!id&&c!=="offices"?ls.get("csm-lastloc",null):null;
   const vals={...(last||{}),...x};if(isAdmin()&&id)vals.phone=phones[pkey(c,id)]||"";
+  // غير المشرف العام: الإقليم الجديد مثبّت على إقليمه (ولا يُستعمل آخر موقع من إقليم آخر)
+  if(!id&&c!=="offices"&&c!=="duat"&&!isAdmin()&&me.region&&vals.region!==me.region){vals.region=me.region;vals.commune="";vals.quarter="";vals.city=""}
   const ctx={editing:!!id,region:vals.region};
   const fs=fieldsOf(c);
   const sect=k=>k==="region"&&c!=="duat"?`<h4>📍 ${t("secLoc")}</h4>`:k===CATS[c].fields[1].k?`<h4>📝 ${t("secData")}</h4>`:k==="phone"?`<h4>☎️ ${t("secContact")}</h4>`:"";
@@ -2477,7 +2479,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="42";
+const APP_VERSION="43";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
