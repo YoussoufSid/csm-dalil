@@ -97,9 +97,9 @@ service cloud.firestore {
     // البطاقات: التحقق من بطاقة برقمها متاح للجميع (get)، أما سرد البطاقات فللإدارة فقط
     match /cards/{id} {
       allow get: if true;
-      allow list: if isAdmin() || (hasProfile() && me().role == 'regadmin' && resource.data.region == me().region);
-      allow create: if isAdmin() || isRegAdmin(request.resource.data.region);
-      allow update: if isAdmin() || (isRegAdmin(resource.data.region) && isRegAdmin(request.resource.data.region));
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
     match /{cat}/{id} {

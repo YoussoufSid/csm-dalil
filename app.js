@@ -402,7 +402,7 @@ async function FirebaseStore(){
       e=>{console.warn(c,e);toast(errMsg(e))})));
     unsubs.push(F.onSnapshot(F.query(F.collection(fs,"news"),F.orderBy("at","desc"),F.limit(50)),s=>{news=s.docs.map(d=>({...d.data(),id:d.id}));render()},()=>{}));
     unsubs.push(F.onSnapshot(F.collection(fs,"config"),s=>{s.docs.forEach(d=>{CONFIG[d.id]=d.data()});applyScope();render()},()=>{}));
-    if(canIssue())unsubs.push(F.onSnapshot(isAdmin()?F.collection(fs,"cards"):F.query(F.collection(fs,"cards"),F.where("region","==",me.region)),s=>{cards=s.docs.map(d=>({...d.data(),id:d.id}));if(view==="cards"||view.startsWith("cardv/"))render()},()=>{}));
+    if(canIssue())unsubs.push(F.onSnapshot(F.collection(fs,"cards"),s=>{cards=s.docs.map(d=>({...d.data(),id:d.id}));if(view==="cards"||view.startsWith("cardv/"))render()},()=>{}));
     if(isAdmin()||isRegAdmin())unsubs.push(F.onSnapshot(isAdmin()?F.collection(fs,"reports"):F.query(F.collection(fs,"reports"),F.where("region","==",me.region)),s=>{reports=s.docs.map(d=>({...d.data(),id:d.id}));render()},()=>{}));
     if(isAdmin())unsubs.push(F.onSnapshot(F.query(F.collection(fs,"logs"),F.orderBy("at","desc"),F.limit(300)),s=>{logs=s.docs.map(d=>({...d.data(),id:d.id}));if(view==="logs")render()},()=>{}));
     if(isAdmin()){
@@ -617,7 +617,7 @@ function renderSide(){
   // مجموعتا «المزيد» و«الإدارة» مطويتان افتراضياً، وتنفتحان تلقائياً إن كانت الصفحة الحالية فيهما
   const det=(id,title,keys,inner)=>{if(!inner)return "";const on=navOpen[id]!==undefined?navOpen[id]:keys.includes(view);return `<details class="ngrp" ${on?"open":""} ontoggle="APP.nt('${id}',this.open)"><summary class="grp" style="cursor:pointer;list-style:none">${title} ▾</summary>${inner}</details>`};
   h+=det("more",t("gMore"),["howto","numbers","ask","about","privacy"],(guest?"":a("howto","📘",t("howT")))+(guest||deleg?"":a("numbers","🔢",t("numT")))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
-  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","unify","users","logs","settings"],(deleg?"":a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):""))+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT"))+a("unify","🔤",t("unT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
+  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","unify","users","logs","settings"],(deleg?"":a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):""))+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash")):"")+(isAdmin()?a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT"))+a("unify","🔤",t("unT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
   $("#nav").innerHTML=h;
   const rl=me.role==="guest"?t("rGuest"):me.owner?"👑 "+t("ownerL"):isAdmin()?t("rAdmin"):isRegAdmin()?"🛡️ "+L(ROLES.regadmin)+" · "+tv(me.region||""):canWrite()?t("rContrib"):t("rViewer");
   $("#who").innerHTML=`<b>${esc(me.name||"")}</b>${rl}`;
@@ -1481,7 +1481,7 @@ Object.assign(S,{
  tImam:["إمام وخطيب","Imam et prédicateur"],tImamR:["إمام راتب","Imam"],tDaiya:["داعية","Prédicateur"],tDaiyaF:["داعية","Prédicatrice"],
  cSearch:["بحث بالاسم أو الرقم...","Rechercher par nom ou numéro..."],cOnly:["تُصدر البطاقات من الإدارة","Les cartes sont émises par l'administration"]
 });
-const canIssue=()=>isAdmin()||isRegAdmin();
+const canIssue=()=>isAdmin();
 const cStatus=k=>k.status==="revoked"?"revoked":(k.expires&&new Date(k.expires)<new Date()?"expired":"active");
 const cBadge=k=>{const s=cStatus(k);return `<span class="pill ${s==="active"?"ok":"pd"}">${s==="active"?"✅ "+t("cActive"):s==="revoked"?"⛔ "+t("cRevoked"):"⚠️ "+t("cExpired")}</span>`};
 const dshort=d=>{try{return new Date(d).toLocaleDateString("fr-FR",{year:"numeric",month:"2-digit",day:"2-digit"})}catch(e){return ""}};
@@ -1641,7 +1641,7 @@ function renderMonthly(){
   const del={};cats.forEach(c=>added(c,m).forEach(x=>{const k=x.createdByName||"—";del[k]=(del[k]||0)+1}));
   const dels=Object.entries(del).sort((a,b)=>b[1]-a[1]).slice(0,10);
   const newOff=canOffices()?added("offices",m):[];
-  const crd=canIssue()?cards.filter(k=>ym(k.issuedAt)===m&&(isAdmin()||k.region===me.region)):[];
+  const crd=canIssue()?cards.filter(k=>ym(k.issuedAt)===m):[];
   const months=[...new Set([new Date().toISOString().slice(0,7),...cats.flatMap(c=>all(c).map(x=>ym(x.createdAt)))].filter(Boolean))].sort().reverse().slice(0,24);
   if(!months.includes(m))months.push(m);
   return `<div class="tools noprint"><label>${t("mrMonth")}</label><select onchange="APP.mrSet(this.value)">${months.map(x=>`<option value="${x}" ${x===m?"selected":""}>${esc(monthName(x))}</option>`).join("")}</select><button class="bp" onclick="print()">${t("mrPrint")}</button></div>
@@ -1976,7 +1976,7 @@ function renderBnav(){const el=$("#bnav");if(!el||!me)return;
   const it=(k,ic,l)=>`<a href="#${k}" class="${view===k?"on":""}"><span>${ic}</span><small>${l}</small></a>`;
   el.innerHTML=it("home","🏠",t("home"))+it("mosques",CATS.mosques.ic,cl("mosques"))+
     (canOffices()?it("offices",CATS.offices.ic,L(["المكاتب","Bureaux"])):it("map","📍",t("map")))+
-    ((isAdmin()||isRegAdmin())?it("cards","🪪",t("cardsT")):it("favs","⭐",t("favs")))+
+    (isAdmin()?it("cards","🪪",t("cardsT")):it("favs","⭐",t("favs")))+
     `<a href="javascript:void 0" onclick="document.body.classList.toggle('open')"><span>☰</span><small>${t("bnMenu")}</small></a>`}
 // إغلاق القائمة الجانبية عند اختيار صفحة على الهاتف
 addEventListener("hashchange",()=>document.body.classList.remove("open"));
@@ -1998,7 +1998,7 @@ applyDark(ls.get("csm-dark",false));
 function repExtra(){
   const lv=OFFICE_LEVELS.map(l=>[l,data.offices.filter(o=>o.level===l)]).filter(([,a])=>a.length);
   const people=data.offices.reduce((a,o)=>a+num(o.people),0);
-  const ct=typeof cards!=="undefined"&&(isAdmin()||isRegAdmin())?cards:[];
+  const ct=typeof cards!=="undefined"&&isAdmin()?cards:[];
   return `<h3>${t("repOff")}</h3><table><tr><th>${t("lvL")}</th><th class="num">${t("count")}</th><th class="num">${t("repPeople")}</th></tr>
    ${lv.map(([l,a])=>`<tr><td>${esc(tv(l))}</td><td class="num">${fmt(a.length)}</td><td class="num">${fmt(a.reduce((s,o)=>s+num(o.people),0))}</td></tr>`).join("")||'<tr><td colspan="3">—</td></tr>'}
    <tr class="tot"><td>${t("records")}</td><td class="num">${fmt(data.offices.length)}</td><td class="num">${fmt(people)}</td></tr></table>
@@ -2490,7 +2490,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="46";
+const APP_VERSION="47";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
