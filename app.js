@@ -414,8 +414,8 @@ async function FirebaseStore(){
     stopAll();
     syncOrder();
     if(!canRead()){ORDER.forEach(c=>{data[c]=[];raw[c]=[]});return}
-    const qOf=c=>c==="offices"?(offAll()?F.collection(fs,c):F.query(F.collection(fs,c),F.where("region","==",me.region))):me.role==="guest"?F.query(F.collection(fs,c),F.where("status","==","verified")):(c!=="duat"&&me.region&&(me.role==="contributor"||me.role==="regadmin"))?F.query(F.collection(fs,c),F.where("region","==",me.region)):F.collection(fs,c);
-    // الأداء مع آلاف السجلات: المندوب ومشرف الإقليم يحمّلان إقليمهما فقط (الدعاة بلا إقليم فيُحمَّلون كلهم)
+    const qOf=c=>c==="offices"?(offAll()?F.collection(fs,c):F.query(F.collection(fs,c),F.where("region","==",me.region))):me.role==="guest"?F.query(F.collection(fs,c),F.where("status","==","verified")):F.collection(fs,c);
+    // المشرف والمندوب يرون جميع المؤسسات في كل الأقاليم (سهولة الوصول)؛ المكاتب وحدها تُقيَّد بالإقليم (qOf أعلاه)
     ORDER.forEach(c=>unsubs.push(F.onSnapshot(qOf(c),{includeMetadataChanges:false},
       s=>{raw[c]=s.docs.map(d=>({...d.data(),id:d.id}));data[c]=raw[c].filter(keepRec);render()},
       e=>{console.warn(c,e);toast(errMsg(e))})));
@@ -2511,7 +2511,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="50";
+const APP_VERSION="51";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
