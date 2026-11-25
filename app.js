@@ -933,7 +933,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
   $("#dt").textContent=CATS[c].ic+" "+(id?t("editT"):t("addT"))+co(c);
   $("#dbody").innerHTML=`<form id="frm" novalidate><div class="db">${last&&last.region?`<div class="hint" style="margin-bottom:8px">↺ ${t("lastUsed")}</div>`:""}<div class="fg">${fs.filter(isEss).map(fld).join("")}</div><details class="more" ${id?"open":""}><summary>➕ ${t("more")}</summary><div class="fg">${fs.filter(f=>!isEss(f)).map(fld).join("")}</div></details>
    ${c==="offices"?structEditor(x.struct):""}
-   ${c==="duat"||c==="offices"?"":`<div class="fg"><h4>📷 ${t("photo")}</h4><div class="full"><input type="file" id="f_photo" accept="image/*"><div class="hint">${t("photoHint")}</div><img id="ph_prev" class="phprev" hidden alt=""></div></div>`}
+   ${c==="duat"||c==="offices"?"":`<div class="fg"><h4>📷 ${t("photo")}</h4><div class="full"><div style="display:flex;gap:8px;flex-wrap:wrap"><label class="bp filebtn" style="flex:1;text-align:center;cursor:pointer">📷 ${L(["التقاط صورة","Prendre une photo"])}<input type="file" id="f_photo_cam" accept="image/*" capture="environment" hidden></label><label class="bs filebtn" style="flex:1;text-align:center;cursor:pointer">🖼️ ${L(["اختيار ملف","Choisir un fichier"])}<input type="file" id="f_photo" accept="image/*" hidden></label></div><div class="hint">${t("photoHint")}</div><img id="ph_prev" class="phprev" hidden alt=""></div></div>`}
    ${id&&!canVerify(x)&&x.status==="verified"?`<div class="hint">${t("reVerify")}</div>`:""}<div class="err" id="ferr"></div></div>
    <div class="df"><button class="bp" type="submit" value="save">${t("save")}</button>${!id?`<button class="bs" type="submit" value="again">${t("saveNew")}</button>`:""}<button class="bs" type="button" onclick="document.getElementById('dlg').close()">${t("cancel")}</button></div></form>`;
   // تغيّر الإقليم: تتبدّل خانة المديرية/الدائرة، وتختفي «المدينة/القرية» في باماكو
@@ -948,7 +948,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
       if(LV_REG.includes(v)&&rg&&rg.value===BAMAKO){rg.value="";rg.onchange({target:rg})}};
     lv.addEventListener("change",onLv);onLv()}
   let photoData=null;
-  if($("#f_photo"))$("#f_photo").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{photoData=await compressImage(f);const im=$("#ph_prev");im.src=photoData;im.hidden=false}catch(err){toast(t("photoErr"))}};
+  ["#f_photo","#f_photo_cam"].forEach(sel=>{if($(sel))$(sel).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{photoData=await compressImage(f);const im=$("#ph_prev");im.src=photoData;im.hidden=false}catch(err){toast(t("photoErr"))}}});
   if(id&&x.hasPhoto)store.getPhoto(pkey(c,id)).then(d=>{if(okImg(d)&&!photoData){const im=$("#ph_prev");if(im){im.src=okImg(d);im.hidden=false}}});
   $("#frm").onsubmit=async e=>{
     e.preventDefault();
@@ -2491,7 +2491,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="48";
+const APP_VERSION="49";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
