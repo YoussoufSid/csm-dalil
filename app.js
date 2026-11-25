@@ -1076,7 +1076,7 @@ Object.assign(S,{
  pickRegionFirst:["اختر الإقليم أولاً","Choisissez d'abord la région"],
  map:["الخريطة","Carte"],about:["عن التجمع","À propos"],dash:["متابعة المندوبين","Suivi des délégués"],logs:["سجل التعديلات","Historique"],
  import:["استيراد من Excel","Import Excel"],settings:["الإعدادات","Paramètres"],
- photo:["صورة المؤسسة","Photo de l'institution"],photoHint:["اختياري. تُصغَّر الصورة تلقائياً.","Facultatif. La photo est réduite automatiquement."],photoErr:["تعذّر قراءة الصورة","Lecture de la photo impossible"],
+ photo:["صورة المؤسسة","Photo de l'institution"],photoHint:["اختياري. اختر ملفاً من الجهاز أو التقط صورة، وتُصغَّر تلقائياً.","Facultatif. Choisissez un fichier ou prenez une photo ; elle est réduite automatiquement."],photoErr:["تعذّر قراءة الصورة","Lecture de la photo impossible"],
  voice:["إملاء صوتي","Dictée vocale"],voiceListen:["🎙️ تكلّم الآن…","🎙️ Parlez…"],voiceErr:["تعذّر التعرّف على الصوت","Reconnaissance vocale impossible"],
  share:["مشاركة","Partager"],card:["بطاقة","Fiche"],copied:["نُسخ الرابط","Lien copié"],linked:["مؤسسات مرتبطة","Institutions liées"],
  chooseRegion:["— الإقليم —","— Région —"],regionSet:["تم تحديد الإقليم","Région attribuée"],
@@ -1467,7 +1467,7 @@ Object.assign(S,{
  cardsT:["البطاقات","Cartes"],cIssue:["➕ إصدار بطاقة","➕ Émettre une carte"],cNone:["لم تُصدر بطاقات بعد","Aucune carte émise"],
  cSource:["المصدر","Source"],cOffice:["المكتب","Bureau"],cPerson:["الشخص","Personne"],cMosque:["المسجد","Mosquée"],cDaiya:["الداعية","Prédicateur"],
  cManual:["— إدخال يدوي —","— Saisie manuelle —"],cName:["الاسم الكامل","Nom complet"],cTitle:["الصفة","Fonction"],cEntity:["الجهة","Entité"],
- cYears:["مدة الصلاحية (سنوات)","Validité (années)"],cPhoto:["الصورة الشخصية","Photo d'identité"],cPhotoHint:["صورة وجه واضحة بخلفية فاتحة","Photo de face, fond clair"],
+ cYears:["مدة الصلاحية (سنوات)","Validité (années)"],cPhoto:["الصورة الشخصية","Photo d'identité"],cPhotoHint:["اختر ملفاً من الجهاز أو التقط صورة. وجه واضح بخلفية فاتحة.","Choisissez un fichier ou prenez une photo. Visage net, fond clair."],
  cSave:["💾 إصدار البطاقة","💾 Émettre"],cIssued:["✅ صدرت البطاقة","✅ Carte émise"],cNum:["رقم البطاقة","N° de carte"],
  cIssuedOn:["تاريخ الإصدار","Délivrée le"],cExp:["تنتهي في","Expire le"],cActive:["سارية","Valide"],cRevoked:["ملغاة","Annulée"],cExpired:["منتهية","Expirée"],
  cRevoke:["إلغاء البطاقة","Annuler la carte"],cRevokeQ:["إلغاء هذه البطاقة؟ ستظهر «ملغاة» عند التحقق منها.","Annuler cette carte ?"],cRestore:["إعادة تفعيل","Réactiver"],
@@ -1521,7 +1521,7 @@ APP.cardForm=type=>{
     <div><label>${t("cEntity")}</label><input id="k_entity"></div>
     <div><label>${t("region")}</label><select id="k_region" ${isAdmin()?"":"disabled"}><option value="">—</option>${REGIONS.map(r=>`<option value="${r}" ${!isAdmin()&&r===me.region?"selected":""}>${esc(tv(r))}</option>`).join("")}</select></div>
     <div><label>${t("cYears")}</label><input id="k_years" type="number" min="1" max="10" value="${yrs}"></div>
-    <div class="full"><label>📷 ${t("cPhoto")}</label><input type="file" id="k_photo" accept="image/*" capture="user"><div class="hint">${t("cPhotoHint")}</div><img id="k_prev" class="phprev" hidden alt=""></div>
+    <div class="full"><label>📷 ${t("cPhoto")}</label><input type="file" id="k_photo" accept="image/*"><div class="hint">${t("cPhotoHint")}</div><img id="k_prev" class="phprev" hidden alt=""></div>
    </div><div class="err" id="kerr"></div></div>
    <div class="df"><button class="bp" type="submit">${t("cSave")}</button><button class="bs" type="button" onclick="document.getElementById('dlg').close()">${t("cancel")}</button></div></form>`;
   if(!dlg.open)dlg.showModal();
@@ -2491,7 +2491,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="47";
+const APP_VERSION="48";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
