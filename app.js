@@ -433,8 +433,7 @@ async function FirebaseStore(){
     },
     async google(){
       const p=new A.GoogleAuthProvider();
-      const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
-      if(standalone)return A.signInWithRedirect(auth,p);
+      // النافذة المنبثقة أولاً حتى داخل التطبيق المثبّت (إعادة التوجيه تفشل مع حجب التخزين المشترك بين النطاقين)
       try{await A.signInWithPopup(auth,p)}catch(e){if(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment")return A.signInWithRedirect(auth,p);throw e}
     },
     async signin(email,pw){await A.signInWithEmailAndPassword(auth,email,pw)},
@@ -2478,7 +2477,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="41";
+const APP_VERSION="42";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
