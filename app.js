@@ -241,6 +241,24 @@ const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const pkey=(c,id)=>c+"__"+id;
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("on");clearTimeout(el._h);el._h=setTimeout(()=>el.classList.remove("on"),2600)}
+// نافذة تأكيد من تصميم التطبيق بدل نافذة المتصفح (تُرجع وعداً: true عند التأكيد)
+function ask(msg,okLabel,safe){return new Promise(res=>{
+  const o=document.createElement("div");o.className="askov";o.setAttribute("role","alertdialog");o.setAttribute("aria-modal","true");
+  o.innerHTML=`<div class="askbox"><p class="askmsg"></p><div class="askbtn"><button type="button" class="bs" data-v="0">${L(["إلغاء","Annuler"])}</button><button type="button" class="${safe?"bp":"bp askdanger"}" data-v="1">${okLabel||L(["تأكيد","Confirmer"])}</button></div></div>`;
+  o.querySelector(".askmsg").textContent=String(msg);
+  const kd=e=>{if(e.key==="Escape")done(false)};
+  const done=v=>{document.removeEventListener("keydown",kd);o.remove();res(v)};
+  document.addEventListener("keydown",kd);
+  o.onclick=e=>{const b=e.target.closest("button[data-v]");if(b)done(b.dataset.v==="1");else if(e.target===o)done(false)};
+  document.body.appendChild(o);o.querySelector("[data-v='0']").focus()})}
+// ترحيب يظهر مرة واحدة للمندوب بعد قبوله وتعيين إقليمه
+function welcomeOnce(){
+  try{if(!me||me.role!=="contributor"||!me.region||!me.uid)return;const k="csm-wel-"+me.uid;if(localStorage.getItem(k))return;localStorage.setItem(k,"1")}catch(e){return}
+  ask(L([`مرحباً بك مندوباً عن إقليم ${me.region}.\n\n١) أضف المؤسسة: الاسم والموقع وصورة.\n٢) ابحث أولاً لتجنب التكرار.\n٣) سجلاتك تُراجَع من مشرف الإقليم.\n\nتجد «الدليل المختصر» في القائمة متى شئت.`,`Bienvenue, délégué de la région ${me.region}.\n\n1) Ajoutez l'institution : nom, lieu, photo.\n2) Cherchez d'abord pour éviter les doublons.\n3) Vos fiches sont relues par le superviseur.\n\nLe guide rapide est dans le menu.`]),L(["ابدأ","Commencer"]),true)}
+// إمكانية الوصول: تسمية الأزرار التي لا نص فيها (رموز فقط) لقارئات الشاشة
+const ICONL={"🗑":["حذف","Supprimer"],"✏":["تعديل","Modifier"],"☰":["القائمة","Menu"],"🌙":["الوضع الليلي","Mode sombre"],"☀":["الوضع النهاري","Mode clair"],"✖":["إغلاق","Fermer"],"✕":["إغلاق","Fermer"],"×":["إغلاق","Fermer"],"🔍":["بحث","Rechercher"],"🔎":["بحث","Rechercher"],"⭐":["المفضلة","Favoris"],"☆":["المفضلة","Favoris"],"📋":["نسخ","Copier"],"🖨":["طباعة","Imprimer"],"📤":["مشاركة","Partager"],"🎤":["إدخال صوتي","Saisie vocale"],"📍":["الموقع","Position"],"📷":["صورة","Photo"],"➕":["إضافة","Ajouter"],"🔄":["تحديث","Actualiser"],"⚙":["الإعدادات","Réglages"]};
+function a11y(){document.querySelectorAll("button:not([aria-label]),a:not([aria-label])").forEach(b=>{const tx=b.textContent.trim();if(!tx||/[\p{L}\p{N}]/u.test(tx))return;const ti=(b.getAttribute("title")||"").trim();const k=[...tx][0];const l=ti||(ICONL[k]?L(ICONL[k]):"");if(l)b.setAttribute("aria-label",l)})}
+try{new MutationObserver(()=>{clearTimeout(a11y._t);a11y._t=setTimeout(a11y,200)}).observe(document.body,{childList:true,subtree:true})}catch(e){}
 function fieldsOf(c){const f=CATS[c].fields;
   // الدعاة: لا موقع لهم، ويبقى الإقليم اختيارياً للإحصاء فقط
   const NF={k:"name_fr",l:["الاسم بالفرنسية (اختياري)","Nom en français (facultatif)"],full:1};
@@ -373,8 +391,8 @@ function scopeBox(){
    <div class="hint">${on?L(["الإخفاء مفعّل: لا يظهر للجميع إلا ما أدخلتَه أنت في باماكو. السجلات الأخرى محفوظة ولم تُحذف.","Masquage actif : seules vos fiches de Bamako sont visibles. Les autres sont conservées, non supprimées."]):L(["كل السجلات ظاهرة. يمكنك إخفاء ما عدا ما أدخلتَه أنت في باماكو (دون حذف).","Toutes les fiches sont visibles. Vous pouvez masquer toutes celles qui ne sont pas les vôtres à Bamako (sans suppression)."])}</div>
    <button class="${on?"bs":"bp"}" onclick="APP.scopeSet(${!on})">${on?L(["إلغاء الإخفاء (إظهار الكل)","Désactiver le masquage"]):L(["تفعيل الإخفاء","Activer le masquage"])}</button>
    ${on?`<label class="chk" style="margin-top:8px"><input type="checkbox" ${sa?"checked":""} onchange="APP.showAll(this.checked)"> ${L(["أرى أنا كل السجلات على هذا الجهاز","Je vois toutes les fiches sur cet appareil"])}</label>`:""}</div>`}
-APP.scopeSet=on=>{
-  if(on&&!confirm(L(["سيُخفى {n} سجلاً عن جميع المستخدمين (دون حذف) ولا يبقى إلا سجلاتك في باماكو. يُنصح بتنزيل نسخة احتياطية أولاً. متابعة؟","{n} fiches seront masquées pour tous (sans suppression). Seules vos fiches de Bamako resteront. Faites d'abord une sauvegarde. Continuer ?"]).replace("{n}",fmt(scopeHidden()))))return;
+APP.scopeSet=async on=>{
+  if(on&&!await ask(L(["سيُخفى {n} سجلاً عن جميع المستخدمين (دون حذف) ولا يبقى إلا سجلاتك في باماكو. يُنصح بتنزيل نسخة احتياطية أولاً. متابعة؟","{n} fiches seront masquées pour tous (sans suppression). Seules vos fiches de Bamako resteront. Faites d'abord une sauvegarde. Continuer ?"]).replace("{n}",fmt(scopeHidden()))))return;
   store.saveConfig("scope",{on,uid:me.uid});applyScope();toast(t("saved"));render()};
 APP.showAll=v=>{ls.set("csm-showall",!!v);applyScope();render()};
 /* ================= التخزين: Firebase ================= */
@@ -396,7 +414,8 @@ async function FirebaseStore(){
     stopAll();
     syncOrder();
     if(!canRead()){ORDER.forEach(c=>{data[c]=[];raw[c]=[]});return}
-    const qOf=c=>c==="offices"?(offAll()?F.collection(fs,c):F.query(F.collection(fs,c),F.where("region","==",me.region))):me.role==="guest"?F.query(F.collection(fs,c),F.where("status","==","verified")):F.collection(fs,c);
+    const qOf=c=>c==="offices"?(offAll()?F.collection(fs,c):F.query(F.collection(fs,c),F.where("region","==",me.region))):me.role==="guest"?F.query(F.collection(fs,c),F.where("status","==","verified")):(c!=="duat"&&me.region&&(me.role==="contributor"||me.role==="regadmin"))?F.query(F.collection(fs,c),F.where("region","==",me.region)):F.collection(fs,c);
+    // الأداء مع آلاف السجلات: المندوب ومشرف الإقليم يحمّلان إقليمهما فقط (الدعاة بلا إقليم فيُحمَّلون كلهم)
     ORDER.forEach(c=>unsubs.push(F.onSnapshot(qOf(c),{includeMetadataChanges:false},
       s=>{raw[c]=s.docs.map(d=>({...d.data(),id:d.id}));data[c]=raw[c].filter(keepRec);render()},
       e=>{console.warn(c,e);toast(errMsg(e))})));
@@ -817,7 +836,7 @@ const MAX_DEP=6,OWNER="sidibey487@gmail.com";
 // النواب المعيَّنون مباشرة (حدّهم 6)، أما أعضاء اللجنة الإدارية المأذون لهم فلا يُحسبون
 const isOwnerU=u=>u.email===OWNER||(me&&me.owner&&u.uid===me.uid);
 const depCount=()=>users.filter(u=>u.role==="admin"&&!isOwnerU(u)&&u.adminVia!=="committee").length;
-APP.reqOk=async uid=>{if(!me.owner)return;const u=users.find(z=>z.uid===uid);if(!confirm(t("reqOkQ",{n:(u&&u.name)||""})))return;
+APP.reqOk=async uid=>{if(!me.owner)return;const u=users.find(z=>z.uid===uid);if(!await ask(t("reqOkQ",{n:(u&&u.name)||""})))return;
   await store.setUser(uid,{role:"admin",adminVia:"committee",adminReq:""});logAct("edit","users",uid,(u&&u.name)||"",null);toast(t("reqOkT"))};
 APP.reqNo=async uid=>{if(!me.owner)return;await store.setUser(uid,{adminReq:""});toast(t("reqNoT"))};
 APP.askAdmin=async on=>{await store.setUser(me.uid,{adminReq:on?new Date().toISOString():""});me.adminReq=on?"x":"";toast(on?t("reqSent"):t("reqCancel"));render()};
@@ -825,7 +844,7 @@ APP.ucom=async(uid,v)=>{await store.setUser(uid,{adminCommittee:!!v});toast(v?t(
 APP.role=async(uid,role)=>{if(role==="admin"&&!me.owner){toast(t("ownerOnly"));return}
   if(role==="admin"&&depCount()>=MAX_DEP){toast(t("depFull",{n:MAX_DEP}));render();return}
   const u=users.find(z=>z.uid===uid);if(u&&u.role==="admin"&&!me.owner){toast(t("ownerOnly"));return}
-  if(role==="admin"&&!confirm(t("mkAdminQ",{n:(u&&u.name)||""}))){render();return}
+  if(role==="admin"&&!await ask(t("mkAdminQ",{n:(u&&u.name)||""}))){render();return}
   await store.setRole(uid,role);if(role==="admin")await store.setUser(uid,{adminVia:"appoint",adminReq:""});else if(u&&u.adminVia)await store.setUser(uid,{adminVia:""});
   if((role==="contributor"||role==="regadmin")&&u&&!u.region&&u.reqRegion&&REGIONS.includes(u.reqRegion)){await store.setUser(uid,{region:u.reqRegion});toast(L(["مُنحت الصلاحية وعُيّن الإقليم المطلوب: ","Rôle accordé et région demandée attribuée : "])+tv(u.reqRegion));return}
   toast((role==="contributor"||role==="regadmin")&&u&&!u.region?L(["تمّ منح الصلاحية. حدّد الآن إقليمه من القائمة تحت اسمه، وإلا لن يستطيع التعديل","Rôle accordé. Choisissez maintenant sa région sous son nom, sinon il ne pourra rien modifier"]):t("roleUpd"))};
@@ -858,7 +877,7 @@ let listV="",listN=60;APP.more=()=>{listN+=60;render()};
 APP.clr=()=>{filt.q="";render()};APP.lvf=v=>{filt.level=v;render()};let filtOpen=false;APP.ftog=()=>{filtOpen=!filtOpen;render()};
 // توثيق جماعي لكل السجلات المعروضة قيد المراجعة
 APP.bulkVerify=async c=>{const ids=(window._lastRows||[]).filter(x=>x.status!=="verified"&&canVerify(x));if(!ids.length)return;
-  if(!confirm(t("bvQ",{n:fmt(ids.length)})))return;const now=new Date().toISOString();let n=0;
+  if(!await ask(t("bvQ",{n:fmt(ids.length)})))return;const now=new Date().toISOString();let n=0;
   for(const x of ids){const {id,...o}=x;Object.assign(o,{status:"verified",verifiedBy:me.uid,verifiedByName:me.name,verifiedAt:now});await store.save(c,id,o);n++}
   logAct("verify",c,"",n+" × "+cl(c),null);toast(t("bvDone",{n:fmt(n)}))};
 APP.goPending=c=>{const go=()=>{filt.status="pending";filt.region="";filt.commune="";filt.city="";render()};if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
@@ -867,6 +886,7 @@ function render(){
   if(view.startsWith("verify/")&&store){renderVerify(view.slice(7));return}
   if(!me)return;
   if(!canRead()){renderWaiting();return}
+  welcomeOnce();
   syncOrder();
   if(view==="offices"&&!canOffices())view="home";
   document.body.classList.remove("noside");
@@ -1165,11 +1185,11 @@ APP.share=async(c,id)=>{
 };
 // تعليق حساب (يُمنع من الدخول إلى البيانات دون حذفه) أو رفع التعليق
 APP.usus=async(uid,on)=>{const u=users.find(z=>z.uid===uid);if(!u||uid===me.uid||isOwnerU(u)||(u.role==="admin"&&!me.owner))return;
-  if(on&&!confirm(L(["تعليق حساب «{n}»؟ لن يستطيع الاطلاع على البيانات حتى ترفع التعليق.","Suspendre « {n} » ? Il n'aura plus accès aux données jusqu'à réactivation."]).replace("{n}",u.name||u.email)))return;
+  if(on&&!await ask(L(["تعليق حساب «{n}»؟ لن يستطيع الاطلاع على البيانات حتى ترفع التعليق.","Suspendre « {n} » ? Il n'aura plus accès aux données jusqu'à réactivation."]).replace("{n}",u.name||u.email)))return;
   try{await store.setUser(uid,{suspended:!!on});logAct("edit","users",uid,u.name||"",null);toast(on?L(["⏸️ عُلّق الحساب","⏸️ Compte suspendu"]):L(["▶️ رُفع التعليق","▶️ Compte réactivé"]))}catch(e){toast(errMsg(e))}};
 // حذف حساب نهائياً من القائمة (لا يحذف سجلات أدخلها)
 APP.udel=async uid=>{const u=users.find(z=>z.uid===uid);if(!u||uid===me.uid||isOwnerU(u)||(u.role==="admin"&&!me.owner))return;
-  if(!confirm(L(["حذف حساب «{n}» نهائياً من القائمة؟ تبقى السجلات التي أدخلها كما هي. وإن أراد العودة فعليه تسجيل الدخول من جديد ليُطلب منه الانتظار. (للمنع من العودة استعمل «تعليق».)","Supprimer définitivement « {n} » de la liste ? Ses fiches restent. S'il se reconnecte, il redevient « en attente ». (Pour l'empêcher, utilisez « Suspendre ».)"]).replace("{n}",u.name||u.email)))return;
+  if(!await ask(L(["حذف حساب «{n}» نهائياً من القائمة؟ تبقى السجلات التي أدخلها كما هي. وإن أراد العودة فعليه تسجيل الدخول من جديد ليُطلب منه الانتظار. (للمنع من العودة استعمل «تعليق».)","Supprimer définitivement « {n} » de la liste ? Ses fiches restent. S'il se reconnecte, il redevient « en attente ». (Pour l'empêcher, utilisez « Suspendre ».)"]).replace("{n}",u.name||u.email)))return;
   try{await store.delUser(uid);logAct("delete","users",uid,u.name||"",null);toast(L(["تم حذف الحساب","Compte supprimé"]))}catch(e){toast(errMsg(e))}};
 APP.uregion=async(uid,r)=>{await store.setUser(uid,{region:r});toast(t("regionSet"))};
 
@@ -1325,7 +1345,7 @@ const clnList=()=>ALLC.flatMap(c=>data[c].filter(x=>"arrond" in x).map(x=>[c,x])
 const clnBox=()=>!isAdmin()||!clnList().length?"":`<div class="card"><h3>🧹 ${t("clnT")} (${fmt(clnList().length)})</h3><div class="hint">${t("clnInfo")}</div><button class="bs" onclick="APP.clnGo()">${t("clnB")}</button></div>`;
 APP.clnGo=async()=>{
   const todo=clnList();if(!todo.length){toast(t("clnNone"));return}
-  if(!confirm(t("clnQ",{n:fmt(todo.length)})))return;
+  if(!await ask(t("clnQ",{n:fmt(todo.length)})))return;
   let n=0;
   for(const [c,x] of todo){try{const {id,arrond,...o}=x;await store.save(c,id,o);n++}catch(e){}}
   logAct("edit","settings","",n+" × arrond",null);toast(t("clnDone",{n:fmt(n)}));render();
@@ -1554,7 +1574,7 @@ APP.cardForm=type=>{
     try{await store.saveCard(id,o);if(photo)await store.savePhoto("cards__"+id,photo);logAct("add","cards",id,o.name+" · "+o.num,null);
       dlg.close();toast(t("cIssued"));location.hash="cardv/"+id}catch(err){$("#kerr").textContent=errMsg(err)}};
 };
-APP.cardRevoke=async(id,on)=>{const k=cards.find(z=>z.id===id);if(!k)return;if(on&&!confirm(t("cRevokeQ")))return;
+APP.cardRevoke=async(id,on)=>{const k=cards.find(z=>z.id===id);if(!k)return;if(on&&!await ask(t("cRevokeQ")))return;
   await store.saveCard(id,{...k,id:undefined,status:on?"revoked":"active",updatedAt:new Date().toISOString(),updatedBy:me.uid});logAct(on?"delete":"edit","cards",id,k.name+" · "+k.num,null);render()};
 
 // رسم البطاقة (الوجه والظهر)
@@ -1760,7 +1780,7 @@ function mosqueOrder(){
   return [...data.mosques].sort((a,b)=>(isHQ(b)-isHQ(a))||ri(a.region)-ri(b.region)||ci(a)-ci(b)||String(a.createdAt||"").localeCompare(String(b.createdAt||""))||String(a.name).localeCompare(String(b.name)))}
 APP.renumM=async()=>{if(!isAdmin())return;
   const list=mosqueOrder();if(!list.length)return;
-  if(!confirm(t("rnQ",{n:fmt(list.length)})))return;
+  if(!await ask(t("rnQ",{n:fmt(list.length)})))return;
   _numBusy=true;let ch=0;
   try{const bko=list.filter(x=>x.region===BAMAKO&&!isHQ(x)),reg=list.filter(x=>x.region!==BAMAKO),hq=list.find(isHQ);
     const regStart=Math.max(REG_START,bko.length+2),plan=[];
@@ -2258,7 +2278,7 @@ APP.restore=async inp=>{
   if(b.config&&b.config.site)jobs.push(()=>store.saveConfig("site",b.config.site));
   if(b.config&&b.config.lists)jobs.push(()=>store.saveConfig("lists",b.config.lists));
   if(!jobs.length){toast(t("bkBad"));return}
-  if(!confirm(t("bkQ",{n:fmt(jobs.length)})))return;
+  if(!await ask(t("bkQ",{n:fmt(jobs.length)})))return;
   let i=0;for(const j of jobs){try{await j()}catch(e){}i++;if(i%25===0)toast(t("bkRun",{i:fmt(i),n:fmt(jobs.length)}))}
   toast(t("bkRDone",{n:fmt(jobs.length)}));
 };
@@ -2486,12 +2506,12 @@ APP.newsForm=id=>{
     dlg.close();toast(t("newsSaved"));if(!location.hash.startsWith("#news"))location.hash="news";};
   if(!dlg.open)dlg.showModal();
 };
-APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted"));location.hash="news"}};
+APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t("deleted"));location.hash="news"}};
 /* ================= التحديث التلقائي (الهاتف والحاسوب) =================
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="49";
+const APP_VERSION="50";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
