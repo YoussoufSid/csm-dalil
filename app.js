@@ -493,7 +493,8 @@ function gate(){return new Promise(res=>{
   g.querySelector(".g-go").onclick=go;g.querySelector(".g-img").onclick=go;setTimeout(go,7000)})}
 function splash(name){
   if(splashShown)return Promise.resolve(); splashShown=true;
-  try{if(sessionStorage.getItem("csm-splash"))return Promise.resolve();sessionStorage.setItem("csm-splash","1")}catch(e){}
+  // الترحيب والبوابة مرة كل ١٢ ساعة على الجهاز، لا عند كل فتح للتطبيق
+  try{const last=+localStorage.getItem("csm-splash-at")||0;if(Date.now()-last<432e5)return Promise.resolve();localStorage.setItem("csm-splash-at",String(Date.now()))}catch(e){}
   return new Promise(res=>{
     const d=document.createElement("div");d.id="splash";
     d.innerHTML=`<div class="sp-bg"></div><div class="sp-stars">${"<i></i>".repeat(18)}</div>
@@ -2542,5 +2543,5 @@ $("#fab").onclick=()=>CATS[view]&&APP.form(view);
 (async()=>{
   $("#main").innerHTML=`<div class="empty">${t("loading")}</div>`;
   try{store=DEMO?LocalStore():await FirebaseStore();await store.start()}
-  catch(e){console.error(e);$("#main").innerHTML=`<div class="banner">${t("loadErr")}</div>`}
+  catch(e){console.error(e);$("#main").innerHTML=`<div class="empty" style="margin-top:40px"><div style="font-size:42px">📡</div><p>${t("loadErr")}</p><button class="bp" onclick="location.reload()">🔄 ${L(["إعادة المحاولة","Réessayer"])}</button></div>`}
 })();
