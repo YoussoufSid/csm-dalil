@@ -11,10 +11,12 @@ service cloud.firestore {
     }
     function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function hasProfile() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
-    function isAdmin()   { return isOwner() || (hasProfile() && me().role == 'admin'); }
-    function isRegAdmin(r) { return hasProfile() && me().role == 'regadmin' && me().region == r; }
-    function isContrib() { return isAdmin() || (hasProfile() && me().role in ['contributor','regadmin']); }
-    function isViewer()  { return isContrib() || (hasProfile() && me().role == 'viewer'); }
+    // حساب له ملف وغير معلَّق (الحساب المعلَّق يفقد كل صلاحياته في الخادم)
+    function ok() { return hasProfile() && !me().get('suspended', false); }
+    function isAdmin()   { return isOwner() || (ok() && me().role == 'admin'); }
+    function isRegAdmin(r) { return ok() && me().role == 'regadmin' && me().region == r; }
+    function isContrib() { return isAdmin() || (ok() && me().role in ['contributor','regadmin']); }
+    function isViewer()  { return isContrib() || (ok() && me().role == 'viewer'); }
     function isCat(c) { return c in ['mosques','schools','centers','duat','assoc','media']; }
 
     match /users/{uid} {
@@ -27,7 +29,8 @@ service cloud.firestore {
         || (isAdmin() && resource.data.role != 'admin' && request.resource.data.role != 'admin')
         || (request.auth.uid == uid && request.resource.data.role == resource.data.role
             && request.resource.data.get('region','') == resource.data.get('region','')
-            && request.resource.data.get('adminCommittee',false) == resource.data.get('adminCommittee',false));
+            && request.resource.data.get('adminCommittee',false) == resource.data.get('adminCommittee',false)
+            && request.resource.data.get('suspended',false) == resource.data.get('suspended',false));
       allow delete: if isOwner() || (isAdmin() && resource.data.role != 'admin');
     }
     match /contacts/{id} {
@@ -75,7 +78,7 @@ service cloud.firestore {
     }
     // مكاتب التجمع: المشرف العام يرى كل المكاتب، ومشرف الإقليم والمندوب يريان مكاتب منطقتهما فقط
     function myZone(r) {
-      return hasProfile() && me().role in ['regadmin','contributor']
+      return ok() && me().role in ['regadmin','contributor']
         && me().get('region','') != '' && me().region == r;
     }
     match /offices/{id} {

@@ -14,9 +14,9 @@ const S={
  favs:["المفضلة","Favoris"],report:["التقرير","Rapport"],users:["المستخدمون","Utilisateurs"],
  gMain:["عام","Général"],gDir:["الدليل","Annuaire"],gBrowse:["التصفح","Navigation"],gAdmin:["الإدارة","Administration"],
  install:["📲 تثبيت التطبيق","📲 Installer l'application"],logout:["↩ تسجيل الخروج","↩ Déconnexion"],
- rAdmin:["🛡️ نائب المدير","🛡️ Directeur adjoint"],rContrib:["✍️ مساهم","✍️ Contributeur"],rViewer:["👁️ مطّلع","👁️ Lecteur"],
+ rAdmin:["🛡️ نائب المدير","🛡️ Directeur adjoint"],rContrib:["✍️ مندوب","✍️ Délégué"],rViewer:["👁️ مطّلع","👁️ Lecteur"],
  demoBanner:["🧪 الوضع التجريبي: البيانات تُحفظ على هذا الجهاز فقط.","🧪 Mode démo : les données sont enregistrées sur cet appareil uniquement."],
- viewerBanner:["صلاحيتك للاطلاع فقط. للإدخال اطلب من المشرف صلاحية «مساهم».","Vous êtes en lecture seule. Demandez à l'administrateur le rôle « Contributeur » pour saisir des données."],
+ viewerBanner:["صلاحيتك للاطلاع فقط. للإدخال اطلب من المشرف صلاحية «مندوب».","Vous êtes en lecture seule. Demandez à l'administrateur le rôle « Délégué » pour saisir des données."],
  demoNoLogout:["الوضع التجريبي لا يحتاج إلى خروج","Pas de déconnexion en mode démo"],
  kick:["تجمع أهل السنة والجماعة في مالي","Communauté Sunnite du Mali"],
  sayAllah:["قال الله تعالى","Allah le Très-Haut a dit"],
@@ -73,7 +73,7 @@ const S={
  item:["البند","Élément"],studTot:["مجموع الطلاب والدارسين","Total élèves"],ofGirls:["منهم الإناث","dont filles"],teachersT:["المعلمون والمحفّظون","Enseignants et maîtres"],
  huffazT:["الحفاظ المتخرجون","Hafiz diplômés"],recog:["مدارس معترف بها رسمياً","Écoles reconnues"],waqfCol:["وضعية الوقف","Statut waqf"],mosqN:["عدد المساجد","Nb de mosquées"],
  prepared:["إعداد: لجنة الإحصاء والتوثيق","Préparé par : Commission statistique"],approved:["اعتماد: ............................","Visa : ............................"],
- usersIntro:["امنح المندوبين صلاحية «مساهم» ليُدخلوا البيانات، و«مطّلع» للاطلاع فقط، و«مشرف إقليم» لمن يراجع ويوثّق في إقليمه. أما «نائب المدير» فيعيّنه المدير وحده.","« Contributeur » pour saisir, « Lecteur » pour consulter, « Superviseur régional » pour vérifier dans sa région. Les « Directeurs adjoints » sont nommés par le directeur seul."],
+ usersIntro:["امنح صلاحية «مندوب» لمن يُدخل البيانات، و«مطّلع» للاطلاع فقط، و«مشرف إقليم» لمن يراجع ويوثّق في إقليمه. أما «نائب المدير» فيعيّنه المدير وحده. ويمكنك تعليق أي حساب (⏸️) أو حذفه (🗑️).","« Délégué » pour saisir, « Lecteur » pour consulter, « Superviseur régional » pour vérifier dans sa région. Les « Directeurs adjoints » sont nommés par le directeur seul."],
  name:["الاسم","Nom"],email:["البريد","E-mail"],state:["الحالة","État"],role:["الصلاحية","Rôle"],you:["أنت","Vous"],noUsers:["لا يوجد مستخدمون بعد.","Aucun utilisateur."],
  roleUpd:["تم تحديث الصلاحية","Rôle mis à jour"],adminOnly:["هذا القسم للمشرفين.","Section réservée aux administrateurs."],
  signIn:["تسجيل الدخول","Connexion"],signUp:["إنشاء حساب مندوب","Créer un compte délégué"],
@@ -200,7 +200,7 @@ const LOC=[
 const flab=(f,x)=>f.k==="commune"?((x&&x.region)===BAMAKO?["المديرية","Direction"]:["الدائرة","Cercle"]):f.l;
 const locLine=x=>{const a=[tv(x.region),tv(x.commune),x.region===BAMAKO?"":x.city,x.quarter].filter(Boolean);return a.filter((v,i)=>a.indexOf(v)===i).join(" · ")};
 const TAIL=[{k:"phone",l:["الهاتف","Téléphone"],t:"tel",priv:1},{k:"notes",l:["ملاحظات","Remarques"],t:"area",full:1}];
-const ROLES={pending:["بانتظار الموافقة","En attente"],viewer:["مطّلع","Lecteur"],contributor:["مساهم","Contributeur"],regadmin:["مشرف إقليم","Superviseur régional"],admin:["نائب المدير","Directeur adjoint"]};
+const ROLES={pending:["بانتظار الموافقة","En attente"],viewer:["مطّلع","Lecteur"],contributor:["مندوب","Délégué"],regadmin:["مشرف إقليم","Superviseur régional"],admin:["نائب المدير","Directeur adjoint"]};
 const L=a=>Array.isArray(a)?a[LANG==="fr"?1:0]:a;
 const cl=c=>L(CATS[c].label), co=c=>L(CATS[c].one);
 
@@ -217,7 +217,7 @@ const isAdmin=()=>me&&me.role==="admin";
 const canWrite=()=>me&&(me.role==="admin"||me.role==="contributor"||me.role==="regadmin");
 const isRegAdmin=()=>me&&me.role==="regadmin";
 const canVerify=x=>isAdmin()||(isRegAdmin()&&x&&x.region===me.region);
-const canRead=()=>me&&me.role!=="pending";
+const canRead=()=>me&&me.role!=="pending"&&!me.suspended;
 // مكاتب التجمع: للمشرف العام كلها، ولمشرف الإقليم والمندوب مكاتب منطقته فقط، ولا يراها غيرهم
 // أعضاء اللجنة الإدارية يرون جميع المكاتب (اطلاعاً)
 const isAdmCom=()=>!!me&&me.role!=="pending"&&me.role!=="guest"&&me.adminCommittee===true;
@@ -344,6 +344,7 @@ function LocalStore(){
     logout(){toast(t("demoNoLogout"))},
     guest(){},
     setUser(uid,patch){if(db.users&&db.users[uid])Object.assign(db.users[uid],patch);persist();emit();return Promise.resolve()},
+    delUser(uid){if(db.users)delete db.users[uid];persist();emit();return Promise.resolve()},
     log(e){db.logs=db.logs||[];db.logs.unshift({...e,id:newId()});db.logs=db.logs.slice(0,300);persist();logs=db.logs;return Promise.resolve()},
     saveConfig(id,o){db.config=db.config||{};db.config[id]={...(db.config[id]||{}),...o};CONFIG[id]=db.config[id];persist();render();return Promise.resolve()},
     async getPhoto(k){return (db.photos||{})[k]||null},
@@ -394,7 +395,7 @@ async function FirebaseStore(){
   function listen(){
     stopAll();
     syncOrder();
-    if(!canRead())return;
+    if(!canRead()){ORDER.forEach(c=>{data[c]=[];raw[c]=[]});return}
     const qOf=c=>c==="offices"?(offAll()?F.collection(fs,c):F.query(F.collection(fs,c),F.where("region","==",me.region))):me.role==="guest"?F.query(F.collection(fs,c),F.where("status","==","verified")):F.collection(fs,c);
     ORDER.forEach(c=>unsubs.push(F.onSnapshot(qOf(c),{includeMetadataChanges:false},
       s=>{raw[c]=s.docs.map(d=>({...d.data(),id:d.id}));data[c]=raw[c].filter(keepRec);render()},
@@ -427,7 +428,7 @@ async function FirebaseStore(){
         me.owner=!!owner;
         if(owner){if(me.role!=="admin")F.setDoc(ref,{role:"admin"},{merge:true}).catch(()=>{});me.role="admin"}
         // متابعة تغيّر الدور (حين يوافق المشرف)
-        unsubs.push(F.onSnapshot(ref,s=>{if(!s.exists())return;const d=s.data(),r=owner?"admin":d.role;if(r!==me.role||(d.region||"")!==(me.region||"")||!!d.adminCommittee!==!!me.adminCommittee){me={...me,...d,role:r};listen();render()}else if((d.adminReq||"")!==(me.adminReq||"")){me={...me,adminReq:d.adminReq||""};render()}}));
+        unsubs.push(F.onSnapshot(ref,s=>{if(!s.exists())return;const d=s.data(),r=owner?"admin":d.role;if(r!==me.role||(d.region||"")!==(me.region||"")||!!d.adminCommittee!==!!me.adminCommittee||!!d.suspended!==!!me.suspended){me={...me,...d,role:r};listen();render()}else if((d.adminReq||"")!==(me.adminReq||"")){me={...me,adminReq:d.adminReq||""};render()}}));
         listen(); render();
       });
     },
@@ -448,6 +449,7 @@ async function FirebaseStore(){
     remove(c,id){fire(F.deleteDoc(F.doc(fs,c,id)));if(phones[pkey(c,id)])fire(F.deleteDoc(F.doc(fs,"contacts",pkey(c,id))));return Promise.resolve()},
     setRole(uid,role){return fire(F.updateDoc(F.doc(fs,"users",uid),{role}))},
     setUser(uid,patch){return fire(F.updateDoc(F.doc(fs,"users",uid),patch))},
+    delUser(uid){return fire(F.deleteDoc(F.doc(fs,"users",uid)))},
     log(e){return fire(F.setDoc(F.doc(fs,"logs",newId()),e))},
     saveConfig(id,o){CONFIG[id]={...(CONFIG[id]||{}),...o};return fire(F.setDoc(F.doc(fs,"config",id),o,{merge:true}))},
     async getPhoto(k){try{const s=await F.getDoc(F.doc(fs,"photos",k));return s.exists()?s.data().data:null}catch(e){return null}},
@@ -595,10 +597,10 @@ function renderAuth(){
 function renderWaiting(){
   document.body.classList.add("noside");$("#fab").style.display="none";
   $("#main").innerHTML=`<div class="authtop"><img src="logo.png" alt=""><div><b>${t("appName")}</b><small>${t("org")}</small></div><button class="langb" id="langbtn">🌐 ${t("lang")}</button></div>
-  <div id="auth" class="wait"><div class="big">🕓</div><h2>${t("waitT")}</h2><div class="sub">${esc(t("waitS",{n:me.name}))}</div>
+  <div id="auth" class="wait">${me.suspended?`<div class="big">⏸️</div><h2>${L(["حسابك معلَّق","Compte suspendu"])}</h2><div class="sub">${L(["علّق المشرف هذا الحساب. للاستفسار تواصل مع مشرف التجمع.","L'administrateur a suspendu ce compte. Contactez le superviseur."])}</div>`:`<div class="big">🕓</div><h2>${t("waitT")}</h2><div class="sub">${esc(t("waitS",{n:me.name}))}</div>`}
   <div class="count" dir="ltr">${esc(me.email)}</div>
-  <div style="margin-top:16px;text-align:start"><label>${L(["الإقليم الذي تطلب العمل فيه (اختياري)","Région où vous souhaitez travailler (facultatif)"])}</label>
-   <select id="rq_r" onchange="APP.reqReg(this.value)"><option value="">${t("choose")}</option>${REGIONS.map(r=>`<option value="${esc(r)}" ${me.reqRegion===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select></div>
+  ${me.suspended?"":`<div style="margin-top:16px;text-align:start"><label>${L(["الإقليم الذي تطلب العمل فيه (اختياري)","Région où vous souhaitez travailler (facultatif)"])}</label>
+   <select id="rq_r" onchange="APP.reqReg(this.value)"><option value="">${t("choose")}</option>${REGIONS.map(r=>`<option value="${esc(r)}" ${me.reqRegion===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select></div>`}
   <button class="bs" id="logout" style="margin-top:14px">${t("logout")}</button></div>`;
 }
 APP.reqReg=async v=>{try{await store.setUser(me.uid,{reqRegion:v});me.reqRegion=v;toast(t("saved"))}catch(e){toast(errMsg(e))}};
@@ -807,8 +809,8 @@ function renderUsers(){
    ${reqs.length?`<h3 style="margin-top:12px">🙋 ${t("reqT")} (${fmt(reqs.length)})</h3>${reqs.map(u=>`<div class="reqrow"><b>${esc(u.name||"")}</b> <span class="count" dir="ltr">${esc(u.email||"")}</span> <span class="count">· ${dfmt(u.adminReq)}</span>
      ${me.owner?`<button class="bp sm" onclick="APP.reqOk('${esc(u.uid)}')">${t("reqOk")}</button><button class="bs sm" onclick="APP.reqNo('${esc(u.uid)}')">${t("reqNo")}</button>`:`<span class="count">🔒 ${t("ownerOnly")}</span>`}</div>`).join("")}`:""}</div>
   <div class="sec"><h2>${t("users")} (${fmt(users.length)})</h2>${rows.length?`<div class="tw"><table><tr><th>${t("name")}</th><th>${t("email")}</th><th>${t("state")}</th><th>${t("role")}</th></tr>
-  ${rows.map(u=>`<tr><td>${esc(u.name)}${u.reqRegion&&!u.region?`<div class="count">🗺️ ${L(["يطلب العمل في:","Demande :"])} ${esc(tv(u.reqRegion))}</div>`:""}</td><td dir="ltr">${esc(u.email)}</td><td><span class="ubadge ${esc(u.role)}">${L(ROLES[u.role])||esc(u.role)}</span></td>
-  <td>${u.uid===me.uid?`<span class="count">${me.owner?"👑 "+t("ownerL")+" · ":""}${t("you")}</span>`:(u.role==="admin"&&!me.owner)?`<span class="count">🔒 ${t("ownerOnly")}</span>`:`<select onchange="APP.role('${esc(u.uid)}',this.value)">${Object.entries(ROLES).filter(([k])=>me.owner||k!=="admin").map(([k,l])=>`<option value="${k}" ${u.role===k?"selected":""}>${L(l)}</option>`).join("")}</select>${u.role!=="pending"&&u.role!=="admin"?`<label class="chkc"><input type="checkbox" ${u.adminCommittee?"checked":""} onchange="APP.ucom('${esc(u.uid)}',this.checked)"> ${t("admCom")}</label>`:""}${u.role==="regadmin"||u.role==="contributor"?`<select style="margin-top:4px" title="${esc(t("uRegionT"))}" onchange="APP.uregion('${esc(u.uid)}',this.value)"><option value="">${t("chooseRegion")}</option>${REGIONS.map(r=>`<option value="${r}" ${u.region===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select>`:""}`}</td></tr>`).join("")}</table></div>`:`<div class="empty">${t("noUsers")}</div>`}</div>`;
+  ${rows.map(u=>`<tr><td>${esc(u.name)}${u.suspended?` <span class="tag" style="background:#fde8e8;color:#b42318">⏸️ ${L(["معلّق","Suspendu"])}</span>`:""}${u.reqRegion&&!u.region?`<div class="count">🗺️ ${L(["يطلب العمل في:","Demande :"])} ${esc(tv(u.reqRegion))}</div>`:""}</td><td dir="ltr">${esc(u.email)}</td><td><span class="ubadge ${esc(u.role)}">${L(ROLES[u.role])||esc(u.role)}</span></td>
+  <td>${u.uid===me.uid?`<span class="count">${me.owner?"👑 "+t("ownerL")+" · ":""}${t("you")}</span>`:(u.role==="admin"&&!me.owner)?`<span class="count">🔒 ${t("ownerOnly")}</span>`:`<select onchange="APP.role('${esc(u.uid)}',this.value)">${Object.entries(ROLES).filter(([k])=>me.owner||k!=="admin").map(([k,l])=>`<option value="${k}" ${u.role===k?"selected":""}>${L(l)}</option>`).join("")}</select>${u.role!=="pending"&&u.role!=="admin"?`<label class="chkc"><input type="checkbox" ${u.adminCommittee?"checked":""} onchange="APP.ucom('${esc(u.uid)}',this.checked)"> ${t("admCom")}</label>`:""}${u.role==="regadmin"||u.role==="contributor"?`<select style="margin-top:4px" title="${esc(t("uRegionT"))}" onchange="APP.uregion('${esc(u.uid)}',this.value)"><option value="">${t("chooseRegion")}</option>${REGIONS.map(r=>`<option value="${r}" ${u.region===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select>`:""}${isOwnerU(u)||(u.role==="admin"&&!me.owner)?"":`<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="bs sm" onclick="APP.usus('${esc(u.uid)}',${!u.suspended})">${u.suspended?"▶️ "+L(["رفع التعليق","Réactiver"]):"⏸️ "+L(["تعليق","Suspendre"])}</button><button class="bd sm" onclick="APP.udel('${esc(u.uid)}')">🗑️ ${L(["حذف","Supprimer"])}</button></div>`}`}</td></tr>`).join("")}</table></div>`:`<div class="empty">${t("noUsers")}</div>`}</div>`;
 }
 const MAX_DEP=6,OWNER="sidibey487@gmail.com";
 // النواب المعيَّنون مباشرة (حدّهم 6)، أما أعضاء اللجنة الإدارية المأذون لهم فلا يُحسبون
@@ -1160,6 +1162,14 @@ APP.share=async(c,id)=>{
   try{await navigator.clipboard.writeText(text+"\n"+url);toast(t("copied"))}catch(e){}
   open("https://wa.me/?text="+encodeURIComponent(text+"\n"+url),"_blank");
 };
+// تعليق حساب (يُمنع من الدخول إلى البيانات دون حذفه) أو رفع التعليق
+APP.usus=async(uid,on)=>{const u=users.find(z=>z.uid===uid);if(!u||uid===me.uid||isOwnerU(u)||(u.role==="admin"&&!me.owner))return;
+  if(on&&!confirm(L(["تعليق حساب «{n}»؟ لن يستطيع الاطلاع على البيانات حتى ترفع التعليق.","Suspendre « {n} » ? Il n'aura plus accès aux données jusqu'à réactivation."]).replace("{n}",u.name||u.email)))return;
+  try{await store.setUser(uid,{suspended:!!on});logAct("edit","users",uid,u.name||"",null);toast(on?L(["⏸️ عُلّق الحساب","⏸️ Compte suspendu"]):L(["▶️ رُفع التعليق","▶️ Compte réactivé"]))}catch(e){toast(errMsg(e))}};
+// حذف حساب نهائياً من القائمة (لا يحذف سجلات أدخلها)
+APP.udel=async uid=>{const u=users.find(z=>z.uid===uid);if(!u||uid===me.uid||isOwnerU(u)||(u.role==="admin"&&!me.owner))return;
+  if(!confirm(L(["حذف حساب «{n}» نهائياً من القائمة؟ تبقى السجلات التي أدخلها كما هي. وإن أراد العودة فعليه تسجيل الدخول من جديد ليُطلب منه الانتظار. (للمنع من العودة استعمل «تعليق».)","Supprimer définitivement « {n} » de la liste ? Ses fiches restent. S'il se reconnecte, il redevient « en attente ». (Pour l'empêcher, utilisez « Suspendre ».)"]).replace("{n}",u.name||u.email)))return;
+  try{await store.delUser(uid);logAct("delete","users",uid,u.name||"",null);toast(L(["تم حذف الحساب","Compte supprimé"]))}catch(e){toast(errMsg(e))}};
 APP.uregion=async(uid,r)=>{await store.setUser(uid,{region:r});toast(t("regionSet"))};
 
 /* ---------- الخريطة ---------- */
@@ -2479,7 +2489,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="43";
+const APP_VERSION="44";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
