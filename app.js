@@ -222,7 +222,7 @@ const canRead=()=>me&&me.role!=="pending"&&!me.suspended;
 // أعضاء اللجنة الإدارية يرون جميع المكاتب (اطلاعاً)
 const isAdmCom=()=>!!me&&me.role!=="pending"&&me.role!=="guest"&&me.adminCommittee===true;
 const offAll=()=>isAdmin()||isAdmCom();
-const offZone=()=>!!me&&(me.role==="regadmin"||me.role==="contributor")&&!!me.region;
+const offZone=()=>!!me&&me.role==="regadmin"&&!!me.region; // المكاتب لمشرف الإقليم فقط، ومحجوبة عن المندوب
 const canOffices=()=>!!me&&(offAll()||offZone());
 const canAddOffice=()=>isAdmin()||offZone();
 const canEditOffice=x=>isAdmin()||(offZone()&&x&&x.region===me.region);
@@ -2511,7 +2511,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="51";
+const APP_VERSION="52";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],

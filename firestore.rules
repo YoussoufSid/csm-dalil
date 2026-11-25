@@ -84,15 +84,14 @@ service cloud.firestore {
     }
     match /offices/{id} {
       // أعضاء اللجنة الإدارية يطّلعون على جميع المكاتب
-      allow read: if isAdmin() || myZone(resource.data.region)
+      // المكاتب: المشرف العام ونوابه، ومشرف الإقليم لإقليمه فقط، وأعضاء اللجنة الإدارية اطلاعاً. المندوب محجوب عنها
+      allow read: if isAdmin() || isRegAdmin(resource.data.region)
         || (hasProfile() && me().role in ['viewer','contributor','regadmin'] && me().get('adminCommittee', false) == true);
-      allow create: if (isAdmin() || myZone(request.resource.data.region))
+      allow create: if (isAdmin() || isRegAdmin(request.resource.data.region))
         && request.resource.data.name is string
         && request.resource.data.status == 'pending';
       allow update: if isAdmin()
-        || (myZone(resource.data.region) && myZone(request.resource.data.region)
-            && (isRegAdmin(resource.data.region)
-                || (request.resource.data.status == 'pending' && !('verifiedBy' in request.resource.data))));
+        || (isRegAdmin(resource.data.region) && isRegAdmin(request.resource.data.region));
       allow delete: if isAdmin() || isRegAdmin(resource.data.region);
     }
     // البطاقات: التحقق من بطاقة برقمها متاح للجميع (get)، أما سرد البطاقات فللإدارة فقط
