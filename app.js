@@ -606,7 +606,7 @@ function renderWaiting(){
 APP.reqReg=async v=>{try{await store.setUser(me.uid,{reqRegion:v});me.reqRegion=v;toast(t("saved"))}catch(e){toast(errMsg(e))}};
 
 /* ================= الإطار ================= */
-const TITLES={howto:"howT",quick:"quick",numbers:"numbers",mrep:"mrep",gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
+const TITLES={unify:"unT",howto:"howT",quick:"quick",numbers:"numbers",mrep:"mrep",gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
 const navOpen={};APP.nt=(id,o)=>{navOpen[id]=o};
 function renderSide(){
   const pu=users.filter(u=>u.role==="pending").length,guest=me.role==="guest",deleg=me.role==="contributor";
@@ -617,7 +617,7 @@ function renderSide(){
   // مجموعتا «المزيد» و«الإدارة» مطويتان افتراضياً، وتنفتحان تلقائياً إن كانت الصفحة الحالية فيهما
   const det=(id,title,keys,inner)=>{if(!inner)return "";const on=navOpen[id]!==undefined?navOpen[id]:keys.includes(view);return `<details class="ngrp" ${on?"open":""} ontoggle="APP.nt('${id}',this.open)"><summary class="grp" style="cursor:pointer;list-style:none">${title} ▾</summary>${inner}</details>`};
   h+=det("more",t("gMore"),["howto","numbers","ask","about","privacy"],(guest?"":a("howto","📘",t("howT")))+(guest||deleg?"":a("numbers","🔢",t("numT")))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
-  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","users","logs","settings"],(deleg?"":a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):""))+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
+  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","unify","users","logs","settings"],(deleg?"":a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):""))+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT"))+a("unify","🔤",t("unT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
   $("#nav").innerHTML=h;
   const rl=me.role==="guest"?t("rGuest"):me.owner?"👑 "+t("ownerL"):isAdmin()?t("rAdmin"):isRegAdmin()?"🛡️ "+L(ROLES.regadmin)+" · "+tv(me.region||""):canWrite()?t("rContrib"):t("rViewer");
   $("#who").innerHTML=`<b>${esc(me.name||"")}</b>${rl}`;
@@ -879,7 +879,7 @@ function render(){
   if(view.startsWith("cardsp/")){const k=view.slice(7);main.innerHTML=renderCardsPrint(k);afterCardsPrint(k);return}
   if(view.startsWith("cardv/")){const id=view.slice(6);main.innerHTML=renderCardView(id);afterCardView(id);return}
   if(view.startsWith("card/")){const[,c,id]=view.split("/");main.innerHTML=renderCard(c,id);afterCard(c,id);return}
-  const R={howto:renderHowto,quick:renderQuick,numbers:renderNumbers,mrep:renderMonthRep,gaps:renderGaps,reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
+  const R={unify:()=>(isAdmin()||isRegAdmin())?unifyBox():`<div class="empty">${t("adminOnly")}</div>`,howto:renderHowto,quick:renderQuick,numbers:renderNumbers,mrep:renderMonthRep,gaps:renderGaps,reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
   const body=view.startsWith("news/")?renderNews(view.slice(5)):view.startsWith("region/")?renderRegion(+view.split("/")[1],view.split("/").slice(2).join("/")||undefined):R[view]?R[view]():CATS[view]?renderList(view):renderHome();
   main.innerHTML=banner()+body;
   if(view==="map")afterMap();
@@ -2010,12 +2010,13 @@ function repExtra(){
 let unF="city",unR="";
 APP.unF=v=>{unF=v;render()};APP.unR=v=>{unR=v;render()};
 function unifyBox(){
+  if(isRegAdmin()&&!isAdmin())unR=me.region||"__none"; // مشرف الإقليم: إقليمه فقط
   const vals={};ORDER.forEach(c=>data[c].forEach(x=>{if(unR&&x.region!==unR)return;const v=String(x[unF]||"").trim();if(v)vals[v]=(vals[v]||0)+1}));
   const list=Object.entries(vals).sort((a,b)=>a[0].localeCompare(b[0],"ar"));
   const lab={city:t("cityL"),quarter:t("quarterL"),commune:L(["الدائرة / المديرية","Cercle / Direction"])};
   return `<div class="sec"><h2>🔤 ${t("unT")}</h2><div class="hint">${t("unHint")}</div>
    <div class="fg" style="margin-top:8px"><div><label>${t("unField")}</label><select onchange="APP.unF(this.value)">${Object.entries(lab).map(([k,l])=>`<option value="${k}" ${unF===k?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
-   <div><label>${t("region")}</label><select onchange="APP.unR(this.value)"><option value="">${t("allRegions")}</option>${REGIONS.map(r=>`<option value="${r}" ${unR===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select></div></div>
+   ${isAdmin()?`<div><label>${t("region")}</label><select onchange="APP.unR(this.value)"><option value="">${t("allRegions")}</option>${REGIONS.map(r=>`<option value="${r}" ${unR===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select></div>`:`<div><label>${t("region")}</label><div class="count" style="padding:10px 0">${esc(tv(me.region||"—"))}</div></div>`}</div>
    <div class="tw" style="margin-top:8px;max-height:340px;overflow:auto"><table><tr><th>${t("unVal")}</th><th class="num">${t("count")}</th><th></th></tr>
    ${list.map(([v,n])=>`<tr><td>${esc(v)}</td><td class="num">${fmt(n)}</td><td><button class="bs sm" onclick="APP.unRen(${esc(JSON.stringify(v))})">✏️ ${t("unRen")}</button></td></tr>`).join("")||'<tr><td colspan="3">—</td></tr>'}</table></div></div>`}
 APP.unRen=async from=>{const to=(prompt(t("unQ",{v:from}),from)||"").trim();if(!to||to===from)return;let n=0;
@@ -2489,7 +2490,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="45";
+const APP_VERSION="46";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
