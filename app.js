@@ -662,6 +662,7 @@ function renderHome(){
   const S2=subs();
   const acts=`<div class="acts"><a class="gold" href="#stats">${t("explore")}</a>${canWrite()?`<button class="ghost" onclick="APP.pick()">${t("addInst")}</button>`:`<a class="ghost" href="#regions">🗺️ ${t("regions")}</a>`}</div>`;
   let h=heroHTML(acts);
+  if(me.role==="guest")return h+guestSearch()+homeNews();
   const pend=allRows().filter(({x})=>x.status!=="verified").length, pu=users.filter(u=>u.role==="pending").length;
   if(isAdmin()&&pu)h+=`<div class="banner" style="margin-top:14px">${t("usersBanner",{n:fmt(pu)})} — <a class="lnk" href="#users">${t("open")}</a></div>`;
   if((isAdmin()||isRegAdmin())&&pend)h+=`<div class="banner pendb" style="margin-top:8px">${t("pendBanner2",{n:fmt(pend)})}<div class="pchips">${ORDER.map(c=>{const n=data[c].filter(x=>x.status!=="verified"&&canVerify(x)).length;return n?`<button class="chip" onclick="APP.goPending('${c}')">${CATS[c].ic} ${cl(c)} <span class="cnt">${fmt(n)}</span></button>`:""}).join("")}</div></div>`;
@@ -675,6 +676,17 @@ function renderHome(){
   h+=`<div class="sech"><h3>${t("recent")}</h3></div>`+(rec.length?`<div class="list">${rec.map(({c,x})=>card(c,x,true)).join("")}</div>`:`<div class="sec empty">${t("noData")}${canWrite()?`<div style="margin-top:12px"><button class="bp" onclick="APP.pick()">${t("addInst")}</button></div>`:""}</div>`);
   return h;
 }
+// صفحة بحث مبسطة للزائر: خانة بحث، نوع المؤسسة، الإقليم، ثم زر واحد
+function guestSearch(){
+  const cats=ORDER.filter(c=>c!=="offices");
+  return `<div class="sec" style="margin-top:14px"><h2>🔎 ${L(["ابحث في الدليل","Rechercher dans l'annuaire"])}</h2>
+   <input id="gs_q" placeholder="${esc(L(["اسم المؤسسة أو المكان…","Nom ou lieu…"]))}" style="font-size:17px;padding:14px" onkeydown="if(event.key==='Enter')APP.gs()">
+   <div class="fg" style="margin-top:8px"><div><label>${L(["النوع","Type"])}</label><select id="gs_c">${cats.map(c=>`<option value="${c}">${CATS[c].ic} ${cl(c)}</option>`).join("")}</select></div>
+   <div><label>${t("region")}</label><select id="gs_r"><option value="">${t("allRegions")}</option>${REGIONS.map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select></div></div>
+   <button class="bp" style="margin-top:12px;width:100%;padding:14px;font-size:17px" onclick="APP.gs()">🔎 ${L(["بحث","Rechercher"])}</button></div>`}
+APP.gs=()=>{const c=$("#gs_c").value,q=$("#gs_q").value,r=$("#gs_r").value;
+  const go=()=>{filt.q=q;filt.region=r;filt.status="";filt.commune="";filt.city="";render()};
+  if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
 APP.pick=()=>{
   $("#dt").textContent=t("addInst").replace("+ ","");
   $("#dbody").innerHTML=`<div class="db"><div class="qgrid" style="margin:0">${ORDER.map(c=>`<div class="qt" onclick="APP.form('${c}')"><span class="ic">${CATS[c].ic}</span><span class="l">${co(c)}</span></div>`).join("")}</div></div>`;
@@ -806,10 +818,16 @@ function renderList(c){
   window._lastRows=rows;
   if(!rows.length)h+=`<div class="sec empty">${data[c].length?t("noMatch"):`<div style="font-size:40px">${CATS[c].ic}</div>${t("noneYet")}${canWriteC(c)?`<div style="margin-top:12px"><button class="bp" onclick="APP.form('${c}')">${t("addFirst")}</button></div>`:""}`}</div>`;
   else if(c==="offices"&&offView==="tree")h+=offTree(rows);
-  else h+=`<div class="list">${rows.map(x=>card(c,x)).join("")}</div>`;
+  else{
+    // عرض تدريجي: ٦٠ سجلاً أولاً ثم «عرض المزيد»، حتى تبقى الصفحة سريعة مع كثرة السجلات
+    if(listV!==view){listV=view;listN=60}
+    h+=`<div class="list">${rows.slice(0,listN).map(x=>card(c,x)).join("")}</div>`;
+    if(rows.length>listN)h+=`<div style="text-align:center;margin:14px 0"><button class="bs" onclick="APP.more()">${L(["عرض المزيد","Afficher plus"])} (${fmt(rows.length-listN)})</button></div>`;
+  }
   if(c==="offices"&&offAll()&&data.offices.length)h+=offCoverage();
   return h;
 }
+let listV="",listN=60;APP.more=()=>{listN+=60;render()};
 APP.clr=()=>{filt.q="";render()};APP.lvf=v=>{filt.level=v;render()};let filtOpen=false;APP.ftog=()=>{filtOpen=!filtOpen;render()};
 // توثيق جماعي لكل السجلات المعروضة قيد المراجعة
 APP.bulkVerify=async c=>{const ids=(window._lastRows||[]).filter(x=>x.status!=="verified"&&canVerify(x));if(!ids.length)return;
@@ -946,6 +964,15 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
   };
   if(!dlg.open)dlg.showModal();
   setTimeout(()=>{const n=$("#f_name");if(n&&!id)n.focus()},50);
+  // اقتراح مؤسسات مشابهة أثناء كتابة الاسم لمنع التكرار قبل الحفظ
+  {const n=$("#f_name"),w=$("#w_name");
+    if(n&&w){const box=document.createElement("div");box.className="hint";box.id="dupsug";box.style.color="#b45309";w.appendChild(box);
+      const nn=s=>nz(String(s||"").replace(/\s+/g," "));
+      n.addEventListener("input",()=>{
+        const q=nn(n.value),toks=q.split(" ").filter(z=>z.length>=3);
+        if(q.length<4){box.innerHTML="";return}
+        const hit=data[c].filter(r=>r.id!==id&&(()=>{const z=nn(r.name);return z===q||z.includes(q)||q.includes(z)||(toks.length>1&&toks.every(k=>z.includes(k)))})()).slice(0,3);
+        box.innerHTML=hit.length?"⚠️ "+L(["مؤسسات مشابهة موجودة:","Fiches similaires déjà saisies :"])+"<br>"+hit.map(r=>"• "+esc(r.name)+" — "+esc(locLine(r))).join("<br>"):""});}}
 };
 function show(v){if(Array.isArray(v))return v.length?v.map(z=>esc(tv(z))).join("، "):"";return v===null||v===undefined?"":esc(typeof v==="number"?fmt(v):tv(v))}
 APP.detail=(c,id)=>{
@@ -2409,7 +2436,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="34";
+const APP_VERSION="35";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
