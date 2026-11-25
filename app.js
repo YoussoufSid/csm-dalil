@@ -357,6 +357,23 @@ function LocalStore(){
   };
 }
 
+/* ---- نطاق العرض: إخفاء (لا حذف) السجلات الأخرى وإبقاء سجلات المالك في باماكو ---- */
+const raw={};
+const showAllHere=()=>isAdmin()&&ls.get("csm-showall",false)===true;
+function keepRec(x){const sc=CONFIG.scope;if(!sc||sc.on!==true||!sc.uid)return true;if(showAllHere())return true;return x.createdBy===sc.uid&&x.region===BAMAKO}
+function applyScope(){ORDER.forEach(c=>{if(raw[c])data[c]=raw[c].filter(keepRec)})}
+const scopeHidden=()=>ORDER.reduce((n,c)=>n+(raw[c]||[]).filter(x=>!(x.createdBy===me.uid&&x.region===BAMAKO)).length,0);
+function scopeBox(){
+  if(!isAdmin()||!me.uid||DEMO)return "";
+  const on=(CONFIG.scope||{}).on===true,sa=ls.get("csm-showall",false)===true;
+  return `<div class="card"><h3>🙈 ${L(["نطاق العرض","Périmètre d'affichage"])}</h3>
+   <div class="hint">${on?L(["الإخفاء مفعّل: لا يظهر للجميع إلا ما أدخلتَه أنت في باماكو. السجلات الأخرى محفوظة ولم تُحذف.","Masquage actif : seules vos fiches de Bamako sont visibles. Les autres sont conservées, non supprimées."]):L(["كل السجلات ظاهرة. يمكنك إخفاء ما عدا ما أدخلتَه أنت في باماكو (دون حذف).","Toutes les fiches sont visibles. Vous pouvez masquer toutes celles qui ne sont pas les vôtres à Bamako (sans suppression)."])}</div>
+   <button class="${on?"bs":"bp"}" onclick="APP.scopeSet(${!on})">${on?L(["إلغاء الإخفاء (إظهار الكل)","Désactiver le masquage"]):L(["تفعيل الإخفاء","Activer le masquage"])}</button>
+   ${on?`<label class="chk" style="margin-top:8px"><input type="checkbox" ${sa?"checked":""} onchange="APP.showAll(this.checked)"> ${L(["أرى أنا كل السجلات على هذا الجهاز","Je vois toutes les fiches sur cet appareil"])}</label>`:""}</div>`}
+APP.scopeSet=on=>{
+  if(on&&!confirm(L(["سيُخفى {n} سجلاً عن جميع المستخدمين (دون حذف) ولا يبقى إلا سجلاتك في باماكو. يُنصح بتنزيل نسخة احتياطية أولاً. متابعة؟","{n} fiches seront masquées pour tous (sans suppression). Seules vos fiches de Bamako resteront. Faites d'abord une sauvegarde. Continuer ?"]).replace("{n}",fmt(scopeHidden()))))return;
+  store.saveConfig("scope",{on,uid:me.uid});applyScope();toast(t("saved"));render()};
+APP.showAll=v=>{ls.set("csm-showall",!!v);applyScope();render()};
 /* ================= التخزين: Firebase ================= */
 async function FirebaseStore(){
   const [{initializeApp},A,F]=await Promise.all([
@@ -378,10 +395,10 @@ async function FirebaseStore(){
     if(!canRead())return;
     const qOf=c=>c==="offices"?(offAll()?F.collection(fs,c):F.query(F.collection(fs,c),F.where("region","==",me.region))):me.role==="guest"?F.query(F.collection(fs,c),F.where("status","==","verified")):F.collection(fs,c);
     ORDER.forEach(c=>unsubs.push(F.onSnapshot(qOf(c),{includeMetadataChanges:false},
-      s=>{data[c]=s.docs.map(d=>({...d.data(),id:d.id}));render()},
+      s=>{raw[c]=s.docs.map(d=>({...d.data(),id:d.id}));data[c]=raw[c].filter(keepRec);render()},
       e=>{console.warn(c,e);toast(errMsg(e))})));
     unsubs.push(F.onSnapshot(F.query(F.collection(fs,"news"),F.orderBy("at","desc"),F.limit(50)),s=>{news=s.docs.map(d=>({...d.data(),id:d.id}));render()},()=>{}));
-    unsubs.push(F.onSnapshot(F.collection(fs,"config"),s=>{s.docs.forEach(d=>{CONFIG[d.id]=d.data()});render()},()=>{}));
+    unsubs.push(F.onSnapshot(F.collection(fs,"config"),s=>{s.docs.forEach(d=>{CONFIG[d.id]=d.data()});applyScope();render()},()=>{}));
     if(canIssue())unsubs.push(F.onSnapshot(isAdmin()?F.collection(fs,"cards"):F.query(F.collection(fs,"cards"),F.where("region","==",me.region)),s=>{cards=s.docs.map(d=>({...d.data(),id:d.id}));if(view==="cards"||view.startsWith("cardv/"))render()},()=>{}));
     if(isAdmin()||isRegAdmin())unsubs.push(F.onSnapshot(isAdmin()?F.collection(fs,"reports"):F.query(F.collection(fs,"reports"),F.where("region","==",me.region)),s=>{reports=s.docs.map(d=>({...d.data(),id:d.id}));render()},()=>{}));
     if(isAdmin())unsubs.push(F.onSnapshot(F.query(F.collection(fs,"logs"),F.orderBy("at","desc"),F.limit(300)),s=>{logs=s.docs.map(d=>({...d.data(),id:d.id}));if(view==="logs")render()},()=>{}));
@@ -1279,7 +1296,7 @@ function renderSettings(){
    <label style="margin-top:8px">${t("region")}</label><select id="s_reg" onchange="APP.showCommunes(this.value)">${REGIONS.filter(r=>r!==BAMAKO).map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select>
    <textarea id="s_comm" rows="7" style="margin-top:8px">${esc(officialCommunes(REGIONS[1]).join("\n"))}</textarea>
    <button class="bp" style="margin-top:8px" onclick="APP.saveCommunes()">${t("saveB")}</button></div></details>
-  <details>${sm("🧰",["الصيانة والأدوات","Maintenance et outils"])}${backupBox()}${renumBox()}${clnBox()}${unifyBox()}${sigBox()}
+  <details>${sm("🧰",["الصيانة والأدوات","Maintenance et outils"])}${backupBox()}${scopeBox()}${renumBox()}${clnBox()}${unifyBox()}${sigBox()}
   <div class="sec"><h2>💾 ${t("backupT")}</h2><div class="hint">${t("backupHint")}</div><button class="bp" style="margin-top:10px" onclick="APP.backup()">${t("backupBtn")}</button></div></details>`;
 }
 /* ---- تنظيف حقل «القسم الإداري» القديم من السجلات ---- */
@@ -2436,7 +2453,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="35";
+const APP_VERSION="36";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
