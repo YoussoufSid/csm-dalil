@@ -820,7 +820,8 @@ APP.role=async(uid,role)=>{if(role==="admin"&&!me.owner){toast(t("ownerOnly"));r
   if(role==="admin"&&depCount()>=MAX_DEP){toast(t("depFull",{n:MAX_DEP}));render();return}
   const u=users.find(z=>z.uid===uid);if(u&&u.role==="admin"&&!me.owner){toast(t("ownerOnly"));return}
   if(role==="admin"&&!confirm(t("mkAdminQ",{n:(u&&u.name)||""}))){render();return}
-  await store.setRole(uid,role);if(role==="admin")await store.setUser(uid,{adminVia:"appoint",adminReq:""});else if(u&&u.adminVia)await store.setUser(uid,{adminVia:""});toast(t("roleUpd"))};
+  await store.setRole(uid,role);if(role==="admin")await store.setUser(uid,{adminVia:"appoint",adminReq:""});else if(u&&u.adminVia)await store.setUser(uid,{adminVia:""});
+  toast((role==="contributor"||role==="regadmin")&&u&&!u.region?L(["تمّ منح الصلاحية. حدّد الآن إقليمه من القائمة تحت اسمه، وإلا لن يستطيع التعديل","Rôle accordé. Choisissez maintenant sa région sous son nom, sinon il ne pourra rien modifier"]):t("roleUpd"))};
 function renderList(c){
   const q=filt.q.trim().toLowerCase();
   const lvi=x=>{const i=OFFICE_LEVELS.indexOf(x.level);return i<0?99:i};
@@ -2472,7 +2473,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="39";
+const APP_VERSION="40";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
