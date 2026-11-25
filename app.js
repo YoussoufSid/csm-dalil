@@ -602,15 +602,15 @@ function renderWaiting(){
 const TITLES={quick:"quick",numbers:"numbers",mrep:"mrep",gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
 const navOpen={};APP.nt=(id,o)=>{navOpen[id]=o};
 function renderSide(){
-  const pu=users.filter(u=>u.role==="pending").length;
+  const pu=users.filter(u=>u.role==="pending").length,guest=me.role==="guest";
   const a=(k,ic,l,extra="")=>`<a href="#${k}" class="${view===k||(k==="regions"&&view.startsWith("region/"))||(k==="news"&&view.startsWith("news/"))?"on":""}"><span class="ic">${ic}</span>${l}${extra}</a>`;
-  let h=`<div class="grp">${t("gMain")}</div>`+a("home","🏠",t("home"))+a("news","📰",t("news"),news.length?`<span class="cnt">${fmt(news.length)}</span>`:"")+a("stats","📊",t("stats"))+a("map","📍",t("map"))+a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:"");
+  let h=`<div class="grp">${t("gMain")}</div>`+a("home","🏠",t("home"))+a("news","📰",t("news"),news.length?`<span class="cnt">${fmt(news.length)}</span>`:"")+(guest?"":a("stats","📊",t("stats")))+a("map","📍",t("map"))+(guest?"":a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:""));
   if(canOffices())h+=`<div class="grp">${t("gOrg")}</div>`+a("offices",CATS.offices.ic,cl("offices"),`<span class="cnt">${fmt(data.offices.length)}</span>`)+(offAll()?"":`<div class="hint" style="padding:0 16px 6px">🔒 ${t("offScope",{r:tv(me.region)})}</div>`);
   h+=`<div class="grp">${t("gDir")}</div>`+ORDER.filter(c=>c!=="offices").map(c=>a(c,CATS[c].ic,cl(c),`<span class="cnt">${fmt(data[c].length)}</span>`)).join("");
   // مجموعتا «المزيد» و«الإدارة» مطويتان افتراضياً، وتنفتحان تلقائياً إن كانت الصفحة الحالية فيهما
   const det=(id,title,keys,inner)=>{if(!inner)return "";const on=navOpen[id]!==undefined?navOpen[id]:keys.includes(view);return `<details class="ngrp" ${on?"open":""} ontoggle="APP.nt('${id}',this.open)"><summary class="grp" style="cursor:pointer;list-style:none">${title} ▾</summary>${inner}</details>`};
-  h+=det("more",t("gMore"),["numbers","ask","about","privacy"],a("numbers","🔢",t("numT"))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
-  h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","users","logs","settings"],a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):"")+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
+  h+=det("more",t("gMore"),["numbers","ask","about","privacy"],(guest?"":a("numbers","🔢",t("numT")))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
+  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","users","logs","settings"],a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):"")+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
   $("#nav").innerHTML=h;
   const rl=me.role==="guest"?t("rGuest"):me.owner?"👑 "+t("ownerL"):isAdmin()?t("rAdmin"):isRegAdmin()?"🛡️ "+L(ROLES.regadmin)+" · "+tv(me.region||""):canWrite()?t("rContrib"):t("rViewer");
   $("#who").innerHTML=`<b>${esc(me.name||"")}</b>${rl}`;
@@ -2453,7 +2453,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="36";
+const APP_VERSION="37";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
