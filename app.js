@@ -597,8 +597,12 @@ function renderWaiting(){
   document.body.classList.add("noside");$("#fab").style.display="none";
   $("#main").innerHTML=`<div class="authtop"><img src="logo.png" alt=""><div><b>${t("appName")}</b><small>${t("org")}</small></div><button class="langb" id="langbtn">🌐 ${t("lang")}</button></div>
   <div id="auth" class="wait"><div class="big">🕓</div><h2>${t("waitT")}</h2><div class="sub">${esc(t("waitS",{n:me.name}))}</div>
-  <div class="count" dir="ltr">${esc(me.email)}</div><button class="bs" id="logout" style="margin-top:14px">${t("logout")}</button></div>`;
+  <div class="count" dir="ltr">${esc(me.email)}</div>
+  <div style="margin-top:16px;text-align:start"><label>${L(["الإقليم الذي تطلب العمل فيه (اختياري)","Région où vous souhaitez travailler (facultatif)"])}</label>
+   <select id="rq_r" onchange="APP.reqReg(this.value)"><option value="">${t("choose")}</option>${REGIONS.map(r=>`<option value="${esc(r)}" ${me.reqRegion===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select></div>
+  <button class="bs" id="logout" style="margin-top:14px">${t("logout")}</button></div>`;
 }
+APP.reqReg=async v=>{try{await store.setUser(me.uid,{reqRegion:v});me.reqRegion=v;toast(t("saved"))}catch(e){toast(errMsg(e))}};
 
 /* ================= الإطار ================= */
 const TITLES={howto:"howT",quick:"quick",numbers:"numbers",mrep:"mrep",gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
@@ -804,7 +808,7 @@ function renderUsers(){
    ${reqs.length?`<h3 style="margin-top:12px">🙋 ${t("reqT")} (${fmt(reqs.length)})</h3>${reqs.map(u=>`<div class="reqrow"><b>${esc(u.name||"")}</b> <span class="count" dir="ltr">${esc(u.email||"")}</span> <span class="count">· ${dfmt(u.adminReq)}</span>
      ${me.owner?`<button class="bp sm" onclick="APP.reqOk('${esc(u.uid)}')">${t("reqOk")}</button><button class="bs sm" onclick="APP.reqNo('${esc(u.uid)}')">${t("reqNo")}</button>`:`<span class="count">🔒 ${t("ownerOnly")}</span>`}</div>`).join("")}`:""}</div>
   <div class="sec"><h2>${t("users")} (${fmt(users.length)})</h2>${rows.length?`<div class="tw"><table><tr><th>${t("name")}</th><th>${t("email")}</th><th>${t("state")}</th><th>${t("role")}</th></tr>
-  ${rows.map(u=>`<tr><td>${esc(u.name)}</td><td dir="ltr">${esc(u.email)}</td><td><span class="ubadge ${esc(u.role)}">${L(ROLES[u.role])||esc(u.role)}</span></td>
+  ${rows.map(u=>`<tr><td>${esc(u.name)}${u.reqRegion&&!u.region?`<div class="count">🗺️ ${L(["يطلب العمل في:","Demande :"])} ${esc(tv(u.reqRegion))}</div>`:""}</td><td dir="ltr">${esc(u.email)}</td><td><span class="ubadge ${esc(u.role)}">${L(ROLES[u.role])||esc(u.role)}</span></td>
   <td>${u.uid===me.uid?`<span class="count">${me.owner?"👑 "+t("ownerL")+" · ":""}${t("you")}</span>`:(u.role==="admin"&&!me.owner)?`<span class="count">🔒 ${t("ownerOnly")}</span>`:`<select onchange="APP.role('${esc(u.uid)}',this.value)">${Object.entries(ROLES).filter(([k])=>me.owner||k!=="admin").map(([k,l])=>`<option value="${k}" ${u.role===k?"selected":""}>${L(l)}</option>`).join("")}</select>${u.role!=="pending"&&u.role!=="admin"?`<label class="chkc"><input type="checkbox" ${u.adminCommittee?"checked":""} onchange="APP.ucom('${esc(u.uid)}',this.checked)"> ${t("admCom")}</label>`:""}${u.role==="regadmin"||u.role==="contributor"?`<select style="margin-top:4px" title="${esc(t("uRegionT"))}" onchange="APP.uregion('${esc(u.uid)}',this.value)"><option value="">${t("chooseRegion")}</option>${REGIONS.map(r=>`<option value="${r}" ${u.region===r?"selected":""}>${esc(tv(r))}</option>`).join("")}</select>`:""}`}</td></tr>`).join("")}</table></div>`:`<div class="empty">${t("noUsers")}</div>`}</div>`;
 }
 const MAX_DEP=6,OWNER="sidibey487@gmail.com";
@@ -821,6 +825,7 @@ APP.role=async(uid,role)=>{if(role==="admin"&&!me.owner){toast(t("ownerOnly"));r
   const u=users.find(z=>z.uid===uid);if(u&&u.role==="admin"&&!me.owner){toast(t("ownerOnly"));return}
   if(role==="admin"&&!confirm(t("mkAdminQ",{n:(u&&u.name)||""}))){render();return}
   await store.setRole(uid,role);if(role==="admin")await store.setUser(uid,{adminVia:"appoint",adminReq:""});else if(u&&u.adminVia)await store.setUser(uid,{adminVia:""});
+  if((role==="contributor"||role==="regadmin")&&u&&!u.region&&u.reqRegion&&REGIONS.includes(u.reqRegion)){await store.setUser(uid,{region:u.reqRegion});toast(L(["مُنحت الصلاحية وعُيّن الإقليم المطلوب: ","Rôle accordé et région demandée attribuée : "])+tv(u.reqRegion));return}
   toast((role==="contributor"||role==="regadmin")&&u&&!u.region?L(["تمّ منح الصلاحية. حدّد الآن إقليمه من القائمة تحت اسمه، وإلا لن يستطيع التعديل","Rôle accordé. Choisissez maintenant sa région sous son nom, sinon il ne pourra rien modifier"]):t("roleUpd"))};
 function renderList(c){
   const q=filt.q.trim().toLowerCase();
@@ -2473,7 +2478,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="40";
+const APP_VERSION="41";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
