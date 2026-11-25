@@ -393,7 +393,7 @@ const raw={};
 const showAllHere=()=>isAdmin()&&ls.get("csm-showall",false)===true;
 // الإخفاء: يبقى كل ما في باماكو (العاصمة) وتُخفى الأقاليم الأخرى حتى يعاد إدخالها موثَّقة؛ الدعاة بلا إقليم فلا يُمسّون
 // ما أُدخل بعد تفعيل الإخفاء (sc.at) يظهر دائماً، فتظهر المؤسسات الموثَّقة المعاد إدخالها في الأقاليم
-const scopeKeep=(x,c,sc)=>c==="duat"||x.region===BAMAKO||(!!sc.at&&String(x.createdAt||"")>=sc.at);
+const scopeKeep=(x,c,sc)=>c==="duat"||c==="offices"||x.region===BAMAKO||(!!sc.at&&String(x.createdAt||"")>=sc.at);
 function keepRec(x,c){const sc=CONFIG.scope;if(!sc||sc.on!==true||!sc.uid)return true;if(showAllHere())return true;return scopeKeep(x,c,sc)}
 function applyScope(){ORDER.forEach(c=>{if(raw[c])data[c]=raw[c].filter(x=>keepRec(x,c))})}
 const scopeHidden=()=>ORDER.reduce((n,c)=>n+(raw[c]||[]).filter(x=>!scopeKeep(x,c,CONFIG.scope||{})).length,0);
@@ -2526,7 +2526,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="54";
+const APP_VERSION="55";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
