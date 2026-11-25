@@ -71,10 +71,11 @@ service cloud.firestore {
     // صور المؤسسات
     match /photos/{id} {
       allow read: if true;
-      allow create, update: if isContrib() && request.resource.data.data is string
+      // صور البطاقات (المعرّف يبدأ بـ cards__) يكتبها المشرف العام ونوابه فقط
+      allow create, update: if isContrib() && (isAdmin() || !id.matches('cards__.*')) && request.resource.data.data is string
         && request.resource.data.data.size() < 900000
         && request.resource.data.data.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$');
-      allow delete: if isContrib();
+      allow delete: if isContrib() && (isAdmin() || !id.matches('cards__.*'));
     }
     // مكاتب التجمع: المشرف العام يرى كل المكاتب، ومشرف الإقليم والمندوب يريان مكاتب منطقتهما فقط
     function myZone(r) {
