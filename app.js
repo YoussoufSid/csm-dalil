@@ -381,19 +381,22 @@ function LocalStore(){
 /* ---- نطاق العرض: إخفاء (لا حذف) السجلات الأخرى وإبقاء سجلات المالك في باماكو ---- */
 const raw={};
 const showAllHere=()=>isAdmin()&&ls.get("csm-showall",false)===true;
-function keepRec(x){const sc=CONFIG.scope;if(!sc||sc.on!==true||!sc.uid)return true;if(showAllHere())return true;return x.createdBy===sc.uid&&x.region===BAMAKO}
-function applyScope(){ORDER.forEach(c=>{if(raw[c])data[c]=raw[c].filter(keepRec)})}
-const scopeHidden=()=>ORDER.reduce((n,c)=>n+(raw[c]||[]).filter(x=>!(x.createdBy===me.uid&&x.region===BAMAKO)).length,0);
+// الإخفاء: يبقى كل ما في باماكو (العاصمة) وتُخفى الأقاليم الأخرى حتى يعاد إدخالها موثَّقة؛ الدعاة بلا إقليم فلا يُمسّون
+// ما أُدخل بعد تفعيل الإخفاء (sc.at) يظهر دائماً، فتظهر المؤسسات الموثَّقة المعاد إدخالها في الأقاليم
+const scopeKeep=(x,c,sc)=>c==="duat"||x.region===BAMAKO||(!!sc.at&&String(x.createdAt||"")>=sc.at);
+function keepRec(x,c){const sc=CONFIG.scope;if(!sc||sc.on!==true||!sc.uid)return true;if(showAllHere())return true;return scopeKeep(x,c,sc)}
+function applyScope(){ORDER.forEach(c=>{if(raw[c])data[c]=raw[c].filter(x=>keepRec(x,c))})}
+const scopeHidden=()=>ORDER.reduce((n,c)=>n+(raw[c]||[]).filter(x=>!scopeKeep(x,c,CONFIG.scope||{})).length,0);
 function scopeBox(){
   if(!isAdmin()||!me.uid||DEMO)return "";
   const on=(CONFIG.scope||{}).on===true,sa=ls.get("csm-showall",false)===true;
   return `<div class="card"><h3>🙈 ${L(["نطاق العرض","Périmètre d'affichage"])}</h3>
-   <div class="hint">${on?L(["الإخفاء مفعّل: لا يظهر للجميع إلا ما أدخلتَه أنت في باماكو. السجلات الأخرى محفوظة ولم تُحذف.","Masquage actif : seules vos fiches de Bamako sont visibles. Les autres sont conservées, non supprimées."]):L(["كل السجلات ظاهرة. يمكنك إخفاء ما عدا ما أدخلتَه أنت في باماكو (دون حذف).","Toutes les fiches sont visibles. Vous pouvez masquer toutes celles qui ne sont pas les vôtres à Bamako (sans suppression)."])}</div>
+   <div class="hint">${on?L(["الإخفاء مفعّل: لا يظهر للجميع إلا مؤسسات باماكو. مؤسسات الأقاليم الأخرى محفوظة ولم تُحذف، وستظهر عند إعادة إدخالها موثَّقة في الإقليم أو عند إلغاء الإخفاء.","Masquage actif : seules les fiches de Bamako sont visibles. Les autres sont conservées, non supprimées."]):L(["كل السجلات ظاهرة. يمكنك إخفاء كل ما عدا مؤسسات باماكو (دون حذف).","Toutes les fiches sont visibles. Vous pouvez masquer toutes celles qui ne sont pas les vôtres à Bamako (sans suppression)."])}</div>
    <button class="${on?"bs":"bp"}" onclick="APP.scopeSet(${!on})">${on?L(["إلغاء الإخفاء (إظهار الكل)","Désactiver le masquage"]):L(["تفعيل الإخفاء","Activer le masquage"])}</button>
    ${on?`<label class="chk" style="margin-top:8px"><input type="checkbox" ${sa?"checked":""} onchange="APP.showAll(this.checked)"> ${L(["أرى أنا كل السجلات على هذا الجهاز","Je vois toutes les fiches sur cet appareil"])}</label>`:""}</div>`}
 APP.scopeSet=async on=>{
-  if(on&&!await ask(L(["سيُخفى {n} سجلاً عن جميع المستخدمين (دون حذف) ولا يبقى إلا سجلاتك في باماكو. يُنصح بتنزيل نسخة احتياطية أولاً. متابعة؟","{n} fiches seront masquées pour tous (sans suppression). Seules vos fiches de Bamako resteront. Faites d'abord une sauvegarde. Continuer ?"]).replace("{n}",fmt(scopeHidden()))))return;
-  store.saveConfig("scope",{on,uid:me.uid});applyScope();toast(t("saved"));render()};
+  if(on&&!await ask(L(["سيُخفى {n} سجلاً عن جميع المستخدمين (دون حذف) ولا تبقى إلا مؤسسات باماكو (العاصمة). تبقى المخفية محفوظة ويمكن إظهارها بإلغاء الإخفاء. يُنصح بتنزيل نسخة احتياطية أولاً. متابعة؟","{n} fiches seront masquées pour tous (sans suppression). Seules les fiches de Bamako resteront. Faites d'abord une sauvegarde. Continuer ?"]).replace("{n}",fmt(scopeHidden()))))return;
+  store.saveConfig("scope",{on,uid:me.uid,at:on?new Date().toISOString():""});applyScope();toast(t("saved"));render()};
 APP.showAll=v=>{ls.set("csm-showall",!!v);applyScope();render()};
 /* ================= التخزين: Firebase ================= */
 async function FirebaseStore(){
@@ -417,7 +420,7 @@ async function FirebaseStore(){
     const qOf=c=>c==="offices"?(offAll()?F.collection(fs,c):F.query(F.collection(fs,c),F.where("region","==",me.region))):me.role==="guest"?F.query(F.collection(fs,c),F.where("status","==","verified")):F.collection(fs,c);
     // المشرف والمندوب يرون جميع المؤسسات في كل الأقاليم (سهولة الوصول)؛ المكاتب وحدها تُقيَّد بالإقليم (qOf أعلاه)
     ORDER.forEach(c=>unsubs.push(F.onSnapshot(qOf(c),{includeMetadataChanges:false},
-      s=>{raw[c]=s.docs.map(d=>({...d.data(),id:d.id}));data[c]=raw[c].filter(keepRec);render()},
+      s=>{raw[c]=s.docs.map(d=>({...d.data(),id:d.id}));data[c]=raw[c].filter(x=>keepRec(x,c));render()},
       e=>{console.warn(c,e);toast(errMsg(e))})));
     unsubs.push(F.onSnapshot(F.query(F.collection(fs,"news"),F.orderBy("at","desc"),F.limit(50)),s=>{news=s.docs.map(d=>({...d.data(),id:d.id}));render()},()=>{}));
     unsubs.push(F.onSnapshot(F.collection(fs,"config"),s=>{s.docs.forEach(d=>{CONFIG[d.id]=d.data()});applyScope();render()},()=>{}));
@@ -2511,7 +2514,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="52";
+const APP_VERSION="53";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
