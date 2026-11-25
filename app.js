@@ -251,6 +251,16 @@ function ask(msg,okLabel,safe){return new Promise(res=>{
   document.addEventListener("keydown",kd);
   o.onclick=e=>{const b=e.target.closest("button[data-v]");if(b)done(b.dataset.v==="1");else if(e.target===o)done(false)};
   document.body.appendChild(o);o.querySelector("[data-v='0']").focus()})}
+// نسخة احتياطية تلقائية: المشرف العام، مرة كل أسبوع، تُنزَّل إلى جهازه عند فتح التطبيق (دون صور لتبقى خفيفة)
+let _abk=0;
+function autoBackupMaybe(){
+  if(_abk||!me||!isAdmin()||DEMO||ls.get("csm-autobk",true)===false)return;
+  _abk=1;
+  setTimeout(()=>{try{
+    if(!isAdmin()||Date.now()-(ls.get("csm-lastbackup",0)||0)<7*864e5)return;
+    if(!ALLC.some(c=>(raw[c]||[]).length))return;
+    APP.backup(true)}catch(e){}},9000)}
+function autoBkSet(v){ls.set("csm-autobk",!!v);toast(v?L(["✅ فُعّلت النسخة التلقائية","✅ Sauvegarde auto activée"]):L(["⏸️ أُوقفت النسخة التلقائية","⏸️ Sauvegarde auto désactivée"]))};
 // ترحيب يظهر مرة واحدة للمندوب بعد قبوله وتعيين إقليمه
 function welcomeOnce(){
   try{if(!me||me.role!=="contributor"||!me.region||!me.uid)return;const k="csm-wel-"+me.uid;if(localStorage.getItem(k))return;localStorage.setItem(k,"1")}catch(e){return}
@@ -269,7 +279,7 @@ function fieldsOf(c){const f=CATS[c].fields;
 const nameMain=x=>LANG==="fr"&&x.name_fr?x.name_fr:x.name;
 const nameSub=x=>x.name_fr?(LANG==="fr"?x.name:x.name_fr):"";
 function allRows(){return ORDER.flatMap(c=>data[c].map(x=>({c,x})))}
-window.APP={};
+window.APP={};APP.autoBk=v=>autoBkSet(v);
 let favs=new Set(ls.get("csm-favs",[]));
 const isFav=(c,id)=>favs.has(pkey(c,id));
 function applyLang(){document.documentElement.lang=LANG;document.documentElement.dir=LANG==="fr"?"ltr":"rtl";document.title=t("appName")}
@@ -713,7 +723,7 @@ function renderHome(){
   const pend=allRows().filter(({x})=>x.status!=="verified").length, pu=users.filter(u=>u.role==="pending").length;
   if(isAdmin()&&pu)h+=`<div class="banner" style="margin-top:14px">${t("usersBanner",{n:fmt(pu)})} — <a class="lnk" href="#users">${t("open")}</a></div>`;
   if((isAdmin()||isRegAdmin())&&pend)h+=`<div class="banner pendb" style="margin-top:8px">${t("pendBanner2",{n:fmt(pend)})}<div class="pchips">${ORDER.map(c=>{const n=data[c].filter(x=>x.status!=="verified"&&canVerify(x)).length;return n?`<button class="chip" onclick="APP.goPending('${c}')">${CATS[c].ic} ${cl(c)} <span class="cnt">${fmt(n)}</span></button>`:""}).join("")}</div></div>`;
-  if(isAdmin()&&!DEMO&&allRows().length&&Date.now()-(ls.get("csm-backup",0)||0)>7*864e5)h+=`<div class="banner" style="margin-top:8px">${t("backupOld")} <button class="lnkb" onclick="APP.backup()">${t("backupNow")}</button></div>`;
+  if(isAdmin()&&!DEMO&&allRows().length&&false)h+=`<div class="banner" style="margin-top:8px">${t("backupOld")} <button class="lnkb" onclick="APP.backup()">${t("backupNow")}</button></div>`;
   h+=monthlyNotice();
   h+=homeNews();
   h+=`<div class="sech"><h3>${t("sections")}</h3><a href="#stats">${t("stats")} ${LANG==="fr"?"→":"←"}</a></div><div class="qgrid">`+
@@ -889,7 +899,7 @@ function render(){
   if(view.startsWith("verify/")&&store){renderVerify(view.slice(7));return}
   if(!me)return;
   if(!canRead()){renderWaiting();return}
-  welcomeOnce();
+  welcomeOnce();autoBackupMaybe();
   syncOrder();
   if(view==="offices"&&!canOffices())view="home";
   document.body.classList.remove("noside");
@@ -2252,14 +2262,16 @@ function backupBox(){
   return `<div class="card"><h3>💾 ${t("bkT")}</h3><div class="hint">${t("bkInfo")}</div>
    <div class="hint"><b>${d?t("bkLast",{d:dfmt(new Date(d).toISOString())}):t("bkNever")}</b></div>
    <label class="chk"><input type="checkbox" id="bk_ph"> ${t("bkPh")}</label>
+   <label class="chk"><input type="checkbox" ${ls.get("csm-autobk",true)===false?"":"checked"} onchange="APP.autoBk(this.checked)"> ${L(["نسخة احتياطية تلقائية كل أسبوع على هذا الجهاز (تُحفظ في التنزيلات عند فتح التطبيق)","Sauvegarde automatique chaque semaine sur cet appareil (dossier Téléchargements)"])}</label>
    <div class="tools"><button class="bp" onclick="APP.backup()">${t("bkB")}</button>
    <label class="bs btnl" style="cursor:pointer">${t("bkR")}<input type="file" accept=".json,application/json" hidden onchange="APP.restore(this)"></label></div></div>`}
-APP.backup=async()=>{
+APP.backup=async(auto)=>{
   if(!isAdmin())return;
-  const withPh=!!($("#bk_ph")&&$("#bk_ph").checked);toast(t("bkWork"));
+  const withPh=auto!==true&&!!($("#bk_ph")&&$("#bk_ph").checked);toast(t("bkWork"));
   const out={app:"csm-dalil",v:APP_VERSION,at:new Date().toISOString(),data:{},phones:{...phones},cards:cards.map(k=>({...k})),news:news.map(k=>({...k})),
     config:{site:CONFIG.site||{},lists:CONFIG.lists||{}},photos:{}};
-  let n=0;ALLC.forEach(c=>{out.data[c]=(data[c]||[]).map(x=>({...x}));n+=out.data[c].length});
+  // النسخة تشمل المخفي بالإخفاء أيضاً (raw)، لا المعروض فقط
+  let n=0;ALLC.forEach(c=>{out.data[c]=((raw[c]||data[c])||[]).map(x=>({...x}));n+=out.data[c].length});
   n+=out.cards.length+out.news.length;
   if(withPh){
     const keys=[];ALLC.forEach(c=>data[c].forEach(x=>{if(x.hasPhoto)keys.push(pkey(c,x.id))}));cards.forEach(k=>{if(k.hasPhoto)keys.push("cards__"+k.id)});keys.push("site__sig","site__stamp");
@@ -2514,7 +2526,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="53";
+const APP_VERSION="54";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
