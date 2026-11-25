@@ -101,12 +101,15 @@ service cloud.firestore {
     }
     match /{cat}/{id} {
       allow read: if isCat(cat) && (isViewer() || resource.data.status == 'verified');
+      // المندوب (مساهم) يُنشئ باسمه ويعدّل ما أنشأه هو فقط؛ المشرف العام ومشرف الإقليم كما كانا
       allow create: if isCat(cat) && isContrib()
         && request.resource.data.name is string
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && (isAdmin() || request.resource.data.get('createdBy','') == request.auth.uid);
       allow update: if isCat(cat) && isContrib()
         && (isAdmin() || isRegAdmin(resource.data.region)
-            || (request.resource.data.status == 'pending' && !('verifiedBy' in request.resource.data)));
+            || (resource.data.get('createdBy','') == request.auth.uid
+                && request.resource.data.status == 'pending' && !('verifiedBy' in request.resource.data)));
       allow delete: if isCat(cat) && (isAdmin() || isRegAdmin(resource.data.region));
     }
   }

@@ -226,6 +226,8 @@ const offZone=()=>!!me&&(me.role==="regadmin"||me.role==="contributor")&&!!me.re
 const canOffices=()=>!!me&&(offAll()||offZone());
 const canAddOffice=()=>isAdmin()||offZone();
 const canEditOffice=x=>isAdmin()||(offZone()&&x&&x.region===me.region);
+// المندوب (مساهم) يعدّل ما أدخله هو فقط؛ المشرفون يعدّلون حسب صلاحيتهم
+const canEditRec=x=>canWrite()&&(me.role!=="contributor"||(!!x&&x.createdBy===me.uid));
 const canWriteC=c=>c==="offices"?canAddOffice():canWrite();
 function syncOrder(){ORDER.splice(0,ORDER.length,...ALLC.filter(c=>c!=="offices"||canOffices()));if(!canOffices())data.offices=[]}
 
@@ -284,7 +286,7 @@ Object.entries(CERCLES_RAW).forEach(([r,s])=>{CERCLES[r]=s.split("|").map(p=>{co
 Object.assign(S,{
  otherQ:["حي آخر (اكتب الاسم)","Autre quartier (saisir)"],
  nameFrL:["الاسم بالفرنسية (اختياري)","Nom en français (facultatif)"],
- gMore:["المزيد","Plus"],
+ gMore:["المزيد","Plus"],howT:["دليل الاستعمال","Mode d'emploi"],
  clnT:["تنظيف بيانات «القسم الإداري» القديمة","Nettoyer l'ancien champ « arrondissement »"],
  clnInfo:["أُلغي هذا الحقل في الإصدار 32. يحذف الزر القيمة القديمة المخزّنة من السجلات (لا يمسّ أي بيانات أخرى).","Ce champ a été supprimé en v32. Le bouton retire l'ancienne valeur des fiches (aucune autre donnée n'est modifiée)."],
  clnB:["🧹 حذف القيم القديمة الآن","🧹 Supprimer les anciennes valeurs"],
@@ -599,18 +601,18 @@ function renderWaiting(){
 }
 
 /* ================= الإطار ================= */
-const TITLES={quick:"quick",numbers:"numbers",mrep:"mrep",gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
+const TITLES={howto:"howT",quick:"quick",numbers:"numbers",mrep:"mrep",gaps:"gaps",reports:"reports",ask:"ask",privacy:"privacy",news:"news",home:"home",stats:"stats",regions:"regions",favs:"favs",report:"report",users:"users",map:"map",about:"about",dash:"dash",logs:"logs",import:"import",settings:"settings"};
 const navOpen={};APP.nt=(id,o)=>{navOpen[id]=o};
 function renderSide(){
-  const pu=users.filter(u=>u.role==="pending").length,guest=me.role==="guest";
+  const pu=users.filter(u=>u.role==="pending").length,guest=me.role==="guest",deleg=me.role==="contributor";
   const a=(k,ic,l,extra="")=>`<a href="#${k}" class="${view===k||(k==="regions"&&view.startsWith("region/"))||(k==="news"&&view.startsWith("news/"))?"on":""}"><span class="ic">${ic}</span>${l}${extra}</a>`;
-  let h=`<div class="grp">${t("gMain")}</div>`+a("home","🏠",t("home"))+a("news","📰",t("news"),news.length?`<span class="cnt">${fmt(news.length)}</span>`:"")+(guest?"":a("stats","📊",t("stats")))+a("map","📍",t("map"))+(guest?"":a("regions","🗺️",t("regions"))+a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:""));
+  let h=`<div class="grp">${t("gMain")}</div>`+a("home","🏠",t("home"))+(deleg?a("quick","⚡",t("qkT")):"")+a("news","📰",t("news"),news.length?`<span class="cnt">${fmt(news.length)}</span>`:"")+(guest||deleg?"":a("stats","📊",t("stats")))+a("map","📍",t("map"))+(guest||deleg?"":a("regions","🗺️",t("regions")))+(guest?"":a("favs","⭐",t("favs"),favs.size?`<span class="cnt">${fmt(favs.size)}</span>`:""));
   if(canOffices())h+=`<div class="grp">${t("gOrg")}</div>`+a("offices",CATS.offices.ic,cl("offices"),`<span class="cnt">${fmt(data.offices.length)}</span>`)+(offAll()?"":`<div class="hint" style="padding:0 16px 6px">🔒 ${t("offScope",{r:tv(me.region)})}</div>`);
   h+=`<div class="grp">${t("gDir")}</div>`+ORDER.filter(c=>c!=="offices").map(c=>a(c,CATS[c].ic,cl(c),`<span class="cnt">${fmt(data[c].length)}</span>`)).join("");
   // مجموعتا «المزيد» و«الإدارة» مطويتان افتراضياً، وتنفتحان تلقائياً إن كانت الصفحة الحالية فيهما
   const det=(id,title,keys,inner)=>{if(!inner)return "";const on=navOpen[id]!==undefined?navOpen[id]:keys.includes(view);return `<details class="ngrp" ${on?"open":""} ontoggle="APP.nt('${id}',this.open)"><summary class="grp" style="cursor:pointer;list-style:none">${title} ▾</summary>${inner}</details>`};
-  h+=det("more",t("gMore"),["numbers","ask","about","privacy"],(guest?"":a("numbers","🔢",t("numT")))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
-  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","users","logs","settings"],a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):"")+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
+  h+=det("more",t("gMore"),["howto","numbers","ask","about","privacy"],(guest?"":a("howto","📘",t("howT")))+(guest||deleg?"":a("numbers","🔢",t("numT")))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
+  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","users","logs","settings"],(deleg?"":a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):""))+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash"))+a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
   $("#nav").innerHTML=h;
   const rl=me.role==="guest"?t("rGuest"):me.owner?"👑 "+t("ownerL"):isAdmin()?t("rAdmin"):isRegAdmin()?"🛡️ "+L(ROLES.regadmin)+" · "+tv(me.region||""):canWrite()?t("rContrib"):t("rViewer");
   $("#who").innerHTML=`<b>${esc(me.name||"")}</b>${rl}`;
@@ -870,7 +872,7 @@ function render(){
   if(view.startsWith("cardsp/")){const k=view.slice(7);main.innerHTML=renderCardsPrint(k);afterCardsPrint(k);return}
   if(view.startsWith("cardv/")){const id=view.slice(6);main.innerHTML=renderCardView(id);afterCardView(id);return}
   if(view.startsWith("card/")){const[,c,id]=view.split("/");main.innerHTML=renderCard(c,id);afterCard(c,id);return}
-  const R={quick:renderQuick,numbers:renderNumbers,mrep:renderMonthRep,gaps:renderGaps,reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
+  const R={howto:renderHowto,quick:renderQuick,numbers:renderNumbers,mrep:renderMonthRep,gaps:renderGaps,reports:renderReports,ask:renderAsk,privacy:renderPrivacy,monthly:renderMonthly,cards:renderCards,news:()=>renderNews(),home:renderHome,stats:renderStats,regions:renderRegions,favs:renderFavs,report:renderReport,users:renderUsers,map:renderMap,about:renderAbout,dash:renderDash,logs:renderLogs,import:renderImport,settings:renderSettings};
   const body=view.startsWith("news/")?renderNews(view.slice(5)):view.startsWith("region/")?renderRegion(+view.split("/")[1],view.split("/").slice(2).join("/")||undefined):R[view]?R[view]():CATS[view]?renderList(view):renderHome();
   main.innerHTML=banner()+body;
   if(view==="map")afterMap();
@@ -909,13 +911,14 @@ function parseGps(s){const m=String(s||"").match(/(-?\d+(?:\.\d+)?)\s*[,،\s]\s*
 
 APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id===id)):canAddOffice())){toast(t("offRO"));return}
   const x=id?data[c].find(r=>r.id===id)||{}:{};
+  if(id&&c!=="offices"&&!canEditRec(x)){toast(L(["يمكنك تعديل السجلات التي أدخلتَها أنت فقط","Vous ne pouvez modifier que vos propres fiches"]));return}
   const last=!id&&c!=="offices"?ls.get("csm-lastloc",null):null;
   const vals={...(last||{}),...x};if(isAdmin()&&id)vals.phone=phones[pkey(c,id)]||"";
   const ctx={editing:!!id,region:vals.region};
   const fs=fieldsOf(c);
   const sect=k=>k==="region"&&c!=="duat"?`<h4>📍 ${t("secLoc")}</h4>`:k===CATS[c].fields[1].k?`<h4>📝 ${t("secData")}</h4>`:k==="phone"?`<h4>☎️ ${t("secContact")}</h4>`:"";
   const ESS=["name","name_fr","region","commune","city","quarter","landmark","gps",CATS[c].fields[1].k,...[]];
-  const isEss=f=>f.req||ESS.includes(f.k);
+  const isEss=f=>f.req||(ESS.includes(f.k)&&!(f.k==="name_fr"&&me.role==="contributor")); // المندوب: الاسم الفرنسي ضمن «المزيد»
   const fld=f=>(isEss(f)?sect(f.k):(f.k==="phone"?sect(f.k):""))+`<div class="${f.full||f.t==="gps"?"full":""}" id="w_${f.k}"><label id="l_${f.k}">${L(flab(f,vals))}${f.req?" <b>*</b>":""}</label>${inputFor(f,vals[f.k],ctx)}</div>`;
   $("#dt").textContent=CATS[c].ic+" "+(id?t("editT"):t("addT"))+co(c);
   $("#dbody").innerHTML=`<form id="frm" novalidate><div class="db">${last&&last.region?`<div class="hint" style="margin-bottom:8px">↺ ${t("lastUsed")}</div>`:""}<div class="fg">${fs.filter(isEss).map(fld).join("")}</div><details class="more" ${id?"open":""}><summary>➕ ${t("more")}</summary><div class="fg">${fs.filter(f=>!isEss(f)).map(fld).join("")}</div></details>
@@ -1013,7 +1016,7 @@ APP.detail=(c,id)=>{
   const linked=linkedTo(c,x);
   if(linked.length)rows.push([t("linked"),linked.map(([lc,lx])=>`<a class="lnk" href="#i/${lc}/${esc(lx.id)}">${CATS[lc].ic} ${esc(lx.name)}</a>`).join("<br>")]);
   $("#dbody").innerHTML=`<div class="db">${x.hasPhoto?'<div class="dphoto" id="dphoto"><span class="count">📷 …</span></div>':""}<div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap"><span class="pill ${v?"ok":"pd"}">${v?"✅ "+t("verified"):"🕓 "+t("pending")}</span><span class="pill" style="background:#eef0ff;color:#3c4a8f">${CATS[c].ic} ${co(c)}</span>${x.code?`<span class="pill code" dir="ltr" title="${esc(t("codeL"))}" onclick="APP.copyCode('${esc(x.code)}')">🔢 ${esc(x.code)}</span>`:""}</div>${qa?`<div class="qabar">${qa}</div>`:""}<dl class="det">${rows.map(([l,val])=>`<dt>${l}</dt><dd>${val}</dd>`).join("")}</dl>${c==="offices"?structView(x.struct):""}${meta&&me.role!=="guest"?`<div class="meta">${meta}</div>`:""}</div>
-   <div class="df"><button class="fav" onclick="APP.fav('${c}','${esc(id)}')">${fv?t("favRm"):t("favAdd")}</button><button class="bs" onclick="APP.share('${c}','${esc(id)}')">📤 ${t("share")}</button><button class="bs" onclick="APP.wa('${c}','${esc(id)}')">${t("wa")}</button><button class="bs" onclick="APP.repOpen('${c}','${esc(id)}')">${t("rep")}</button><a class="bs btnl" href="#card/${c}/${esc(id)}">🪪 ${t("card")}</a>${(c==="offices"?canEditOffice(x):canWrite())?`<button class="bp" onclick="APP.form('${c}','${esc(id)}')">${t("edit")}</button>`:""}${canVerify(x)?`<button class="bg" onclick="APP.status('${c}','${esc(id)}',${!v})">${v?t("unverify"):t("verify")}</button><button class="bd" onclick="APP.del('${c}','${esc(id)}')">${t("del")}</button>`:""}</div>`;
+   <div class="df"><button class="fav" onclick="APP.fav('${c}','${esc(id)}')">${fv?t("favRm"):t("favAdd")}</button><button class="bs" onclick="APP.share('${c}','${esc(id)}')">📤 ${t("share")}</button><button class="bs" onclick="APP.wa('${c}','${esc(id)}')">${t("wa")}</button><button class="bs" onclick="APP.repOpen('${c}','${esc(id)}')">${t("rep")}</button><a class="bs btnl" href="#card/${c}/${esc(id)}">🪪 ${t("card")}</a>${(c==="offices"?canEditOffice(x):canEditRec(x))?`<button class="bp" onclick="APP.form('${c}','${esc(id)}')">${t("edit")}</button>`:""}${canVerify(x)?`<button class="bg" onclick="APP.status('${c}','${esc(id)}',${!v})">${v?t("unverify"):t("verify")}</button><button class="bd" onclick="APP.del('${c}','${esc(id)}')">${t("del")}</button>`:""}</div>`;
   if(!dlg.open)dlg.showModal();
   if(x.hasPhoto)store.getPhoto(pkey(c,id)).then(d=>{const el=$("#dphoto");if(el)el.innerHTML=okImg(d)?`<img src="${okImg(d)}" alt="">`:""});
 };
@@ -2328,6 +2331,22 @@ Object.assign(S,{
  gStale:["لم تُحدَّث منذ سنة","Non mise à jour depuis 1 an"]
 });
 const mosqueCats=()=>ORDER.filter(c=>c!=="offices");
+/* ---------- دليل الاستعمال القصير ---------- */
+function renderHowto(){
+  const step=(n,ttl,txt)=>`<div class="sec" style="margin-bottom:10px"><h3 style="margin:0 0 4px">${n}. ${L(ttl)}</h3><div class="hint" style="font-size:15px;line-height:1.8">${L(txt)}</div></div>`;
+  const add=canWrite()&&me.role!=="guest";
+  return `<div class="banner">${L(["دليل مختصر وسريع للاستعمال","Guide rapide d'utilisation"])}</div>`+
+   (add?`<h3 style="margin:14px 0 8px">${L(["📝 كيف أُضيف مؤسسة؟","📝 Comment ajouter une fiche ?"])}</h3>`+
+   step(1,["افتح «إضافة سريعة»","Ouvrez « Ajout rapide »"],["من القائمة الجانبية اضغط ⚡ إضافة سريعة.","Dans le menu, touchez ⚡ Ajout rapide."])+
+   step(2,["اكتب البيانات الأساسية","Saisissez l'essentiel"],["اختر النوع، ثم اكتب الاسم والإقليم والحي أو المدينة، والهاتف إن توفر.","Choisissez le type, puis le nom, la région, le quartier ou la ville, et le téléphone si disponible."])+
+   step(3,["حدّد الموقع","Localisez"],["وأنت أمام المؤسسة اضغط «موقعي الحالي» ليُحفظ مكانها على الخريطة.","Devant l'établissement, touchez « Ma position » pour l'enregistrer sur la carte."])+
+   step(4,["صوّر المؤسسة (اختياري)","Prenez une photo (facultatif)"],["اضغط زر الصورة والتقط صورة للواجهة.","Touchez le bouton photo et photographiez la façade."])+
+   step(5,["احفظ","Enregistrez"],["يظهر السجل «قيد المراجعة» حتى يوثّقه المشرف. لا تكرر الإدخال.","La fiche reste « en attente » jusqu'à vérification par le superviseur. Ne la saisissez pas deux fois."]):"")+
+   `<h3 style="margin:14px 0 8px">${L(["ℹ️ معلومات مهمة","ℹ️ À savoir"])}</h3>`+
+   step("•",["دون إنترنت","Sans internet"],["يمكنك الإدخال دون اتصال، وتُرسَل البيانات تلقائياً عند عودة الإنترنت.","Vous pouvez saisir hors ligne ; les données sont envoyées au retour de la connexion."])+
+   (add?step("•",["التعديل","Modification"],["تعدّل السجلات التي أدخلتَها أنت فقط. وللتصحيح في غيرها استعمل «إبلاغ / اقتراح».","Vous ne modifiez que vos fiches. Pour les autres, utilisez « Signaler / suggérer »."]):"")+
+   step("•",["الخصوصية","Confidentialité"],["أرقام الهواتف لا يراها إلا المشرفون.","Les numéros de téléphone ne sont visibles que par les superviseurs."])+
+   step("•",["خطأ في بيانات؟","Une erreur ?"],["افتح المؤسسة واضغط «🚩 إبلاغ / اقتراح»، فتصل ملاحظتك لمشرف الإقليم.","Ouvrez la fiche et touchez « 🚩 Signaler / suggérer » : le superviseur de la région sera informé."])}
 /* ---------- الإدخال السريع ---------- */
 let qkN=0,qkPhoto=null;
 function renderQuick(){
@@ -2453,7 +2472,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="37";
+const APP_VERSION="38";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
