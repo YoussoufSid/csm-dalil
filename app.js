@@ -226,8 +226,8 @@ const offZone=()=>!!me&&(me.role==="regadmin"||me.role==="contributor")&&!!me.re
 const canOffices=()=>!!me&&(offAll()||offZone());
 const canAddOffice=()=>isAdmin()||offZone();
 const canEditOffice=x=>isAdmin()||(offZone()&&x&&x.region===me.region);
-// المندوب (مساهم) يعدّل ما أدخله هو فقط؛ المشرفون يعدّلون حسب صلاحيتهم
-const canEditRec=x=>canWrite()&&(me.role!=="contributor"||(!!x&&x.createdBy===me.uid));
+// المندوب (مساهم) يعدّل سجلات إقليمه فقط ولو أدخلها غيره؛ المشرفون يعدّلون حسب صلاحيتهم
+const canEditRec=x=>canWrite()&&(me.role!=="contributor"||(!!x&&!!me.region&&x.region===me.region));
 const canWriteC=c=>c==="offices"?canAddOffice():canWrite();
 function syncOrder(){ORDER.splice(0,ORDER.length,...ALLC.filter(c=>c!=="offices"||canOffices()));if(!canOffices())data.offices=[]}
 
@@ -911,7 +911,7 @@ function parseGps(s){const m=String(s||"").match(/(-?\d+(?:\.\d+)?)\s*[,،\s]\s*
 
 APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id===id)):canAddOffice())){toast(t("offRO"));return}
   const x=id?data[c].find(r=>r.id===id)||{}:{};
-  if(id&&c!=="offices"&&!canEditRec(x)){toast(L(["يمكنك تعديل السجلات التي أدخلتَها أنت فقط","Vous ne pouvez modifier que vos propres fiches"]));return}
+  if(id&&c!=="offices"&&!canEditRec(x)){toast(L(["يمكنك تعديل سجلات إقليمك فقط","Vous ne pouvez modifier que les fiches de votre région"]));return}
   const last=!id&&c!=="offices"?ls.get("csm-lastloc",null):null;
   const vals={...(last||{}),...x};if(isAdmin()&&id)vals.phone=phones[pkey(c,id)]||"";
   const ctx={editing:!!id,region:vals.region};
@@ -2344,7 +2344,7 @@ function renderHowto(){
    step(5,["احفظ","Enregistrez"],["يظهر السجل «قيد المراجعة» حتى يوثّقه المشرف. لا تكرر الإدخال.","La fiche reste « en attente » jusqu'à vérification par le superviseur. Ne la saisissez pas deux fois."]):"")+
    `<h3 style="margin:14px 0 8px">${L(["ℹ️ معلومات مهمة","ℹ️ À savoir"])}</h3>`+
    step("•",["دون إنترنت","Sans internet"],["يمكنك الإدخال دون اتصال، وتُرسَل البيانات تلقائياً عند عودة الإنترنت.","Vous pouvez saisir hors ligne ; les données sont envoyées au retour de la connexion."])+
-   (add?step("•",["التعديل","Modification"],["تعدّل السجلات التي أدخلتَها أنت فقط. وللتصحيح في غيرها استعمل «إبلاغ / اقتراح».","Vous ne modifiez que vos fiches. Pour les autres, utilisez « Signaler / suggérer »."]):"")+
+   (add?step("•",["التعديل","Modification"],["تعدّل سجلات إقليمك فقط، ولو أدخلها غيرك. وللتصحيح في إقليم آخر استعمل «إبلاغ / اقتراح».","Vous modifiez les fiches de votre région, même saisies par d'autres. Pour une autre région, utilisez « Signaler / suggérer »."]):"")+
    step("•",["الخصوصية","Confidentialité"],["أرقام الهواتف لا يراها إلا المشرفون.","Les numéros de téléphone ne sont visibles que par les superviseurs."])+
    step("•",["خطأ في بيانات؟","Une erreur ?"],["افتح المؤسسة واضغط «🚩 إبلاغ / اقتراح»، فتصل ملاحظتك لمشرف الإقليم.","Ouvrez la fiche et touchez « 🚩 Signaler / suggérer » : le superviseur de la région sera informé."])}
 /* ---------- الإدخال السريع ---------- */
@@ -2472,7 +2472,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="38";
+const APP_VERSION="39";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
