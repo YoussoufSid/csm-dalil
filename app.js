@@ -932,7 +932,7 @@ APP.form=(c,id)=>{if(c==="offices"&&!(id?canEditOffice(data.offices.find(r=>r.id
   $("#dt").textContent=CATS[c].ic+" "+(id?t("editT"):t("addT"))+co(c);
   $("#dbody").innerHTML=`<form id="frm" novalidate><div class="db">${last&&last.region?`<div class="hint" style="margin-bottom:8px">↺ ${t("lastUsed")}</div>`:""}<div class="fg">${fs.filter(isEss).map(fld).join("")}</div><details class="more" ${id?"open":""}><summary>➕ ${t("more")}</summary><div class="fg">${fs.filter(f=>!isEss(f)).map(fld).join("")}</div></details>
    ${c==="offices"?structEditor(x.struct):""}
-   ${c==="duat"||c==="offices"?"":`<div class="fg"><h4>📷 ${t("photo")}</h4><div class="full"><input type="file" id="f_photo" accept="image/*" capture="environment"><div class="hint">${t("photoHint")}</div><img id="ph_prev" class="phprev" hidden alt=""></div></div>`}
+   ${c==="duat"||c==="offices"?"":`<div class="fg"><h4>📷 ${t("photo")}</h4><div class="full"><input type="file" id="f_photo" accept="image/*"><div class="hint">${t("photoHint")}</div><img id="ph_prev" class="phprev" hidden alt=""></div></div>`}
    ${id&&!canVerify(x)&&x.status==="verified"?`<div class="hint">${t("reVerify")}</div>`:""}<div class="err" id="ferr"></div></div>
    <div class="df"><button class="bp" type="submit" value="save">${t("save")}</button>${!id?`<button class="bs" type="submit" value="again">${t("saveNew")}</button>`:""}<button class="bs" type="button" onclick="document.getElementById('dlg').close()">${t("cancel")}</button></div></form>`;
   // تغيّر الإقليم: تتبدّل خانة المديرية/الدائرة، وتختفي «المدينة/القرية» في باماكو
@@ -2379,7 +2379,7 @@ function renderQuick(){
     <div class="full"><label>${t("qkPhone")}</label><input id="qk_t" type="tel" dir="ltr" autocomplete="off"></div>
    </div>
    <div class="tools" style="margin-top:10px"><button class="bg" type="button" onclick="APP.qkGps()">${t("qkGps")}</button>
-    <label class="bs btnl" style="cursor:pointer">${t("qkPhoto")}<input type="file" accept="image/*" capture="environment" hidden onchange="APP.qkPh(this)"></label>
+    <label class="bs btnl" style="cursor:pointer">${t("qkPhoto")}<input type="file" accept="image/*" hidden onchange="APP.qkPh(this)"></label>
     <span class="count" id="qk_i"></span></div>
    <div class="err" id="qk_e"></div>
    <div class="tools"><button class="bp" style="font-size:17px;padding:13px 26px" onclick="APP.qkSave()">${t("qkSave")}</button><span class="count" id="qk_k">${qkN?t("qkCount",{n:fmt(qkN)}):""}</span></div></div>`}
@@ -2489,7 +2489,7 @@ APP.newsDel=id=>{if(confirm(t("newsDelAsk"))){store.delNews(id);toast(t("deleted
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="44";
+const APP_VERSION="45";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
