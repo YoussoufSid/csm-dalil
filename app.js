@@ -719,7 +719,8 @@ function renderHome(){
   const S2=subs();
   const acts=`<div class="acts"><a class="gold" href="#stats">${t("explore")}</a>${canWrite()?`<button class="ghost" onclick="APP.pick()">${t("addInst")}</button>`:`<a class="ghost" href="#regions">🗺️ ${t("regions")}</a>`}</div>`;
   let h=heroHTML(acts);
-  if(me.role==="guest")return h+guestSearch()+homeNews();
+  if(me.role==="guest")return guestSearch()+h+homeNews();
+  h=topSearch()+h;
   const pend=allRows().filter(({x})=>x.status!=="verified").length, pu=users.filter(u=>u.role==="pending").length;
   if(isAdmin()&&pu)h+=`<div class="banner" style="margin-top:14px">${t("usersBanner",{n:fmt(pu)})} — <a class="lnk" href="#users">${t("open")}</a></div>`;
   if((isAdmin()||isRegAdmin())&&pend)h+=`<div class="banner pendb" style="margin-top:8px">${t("pendBanner2",{n:fmt(pend)})}<div class="pchips">${ORDER.map(c=>{const n=data[c].filter(x=>x.status!=="verified"&&canVerify(x)).length;return n?`<button class="chip" onclick="APP.goPending('${c}')">${CATS[c].ic} ${cl(c)} <span class="cnt">${fmt(n)}</span></button>`:""}).join("")}</div></div>`;
@@ -734,6 +735,9 @@ function renderHome(){
   return h;
 }
 // صفحة بحث مبسطة للزائر: خانة بحث، نوع المؤسسة، الإقليم، ثم زر واحد
+function topSearch(){
+  return `<div class="tsb"><input id="hs_q" placeholder="🔎 ${esc(L(["ابحث عن مؤسسة أو مكان…","Rechercher une institution ou un lieu…"]))}" onkeydown="if(event.key==='Enter')APP.hs()"><button class="bp" onclick="APP.hs()">${L(["بحث","OK"])}</button></div>`}
+APP.hs=()=>{const q=$("#hs_q").value;location.hash="stats";setTimeout(()=>{filt.q=q;render()},80)};
 function guestSearch(){
   const cats=ORDER.filter(c=>c!=="offices");
   return `<div class="sec" style="margin-top:14px"><h2>🔎 ${L(["ابحث في الدليل","Rechercher dans l'annuaire"])}</h2>
@@ -920,6 +924,12 @@ function render(){
   if(view==="stats")afterStats();
   if(view.startsWith("i/")&&!dlg.open){const[,c,id]=view.split("/");if(data[c]&&data[c].find(r=>r.id===id))APP.detail(c,id)}
   for(const id of ["q","gq"]){const q=$("#"+id);if(q)q.oninput=e=>{filt.q=e.target.value;const p=e.target.selectionStart;render();const n=$("#"+id);n.focus();n.setSelectionRange(p,p)}}
+  for(const id of ["q","gq","hs_q","gs_q"]){const q=$("#"+id);if(!q)continue;
+    const fill=()=>{const v=q.value.trim().toLowerCase();let dl=$("#sg_"+id);if(!dl){dl=document.createElement("datalist");dl.id="sg_"+id;document.body.appendChild(dl);q.setAttribute("list","sg_"+id);q.setAttribute("autocomplete","off")}
+      if(v.length<2){dl.innerHTML="";return}
+      const seen=new Set(),out=[];for(const {x} of allRows()){const n=String(x.name||"");if(n&&!seen.has(n)&&n.toLowerCase().includes(v)){seen.add(n);out.push(n);if(out.length>=8)break}}
+      dl.innerHTML=out.map(n=>`<option value="${esc(n)}">`).join("")};
+    q.addEventListener("input",fill);fill()}
   const rg=$("#rg");if(rg)rg.onchange=e=>{filt.region=e.target.value;filt.commune="";filt.city="";render()};
   const sf=$("#sf");if(sf)sf.onchange=e=>{filt.status=e.target.value;render()};
 }
@@ -2532,7 +2542,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="57";
+const APP_VERSION="58";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
