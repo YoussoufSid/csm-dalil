@@ -1212,7 +1212,7 @@ function renderMap(){
   const all=allRows(),withGps=all.filter(({x})=>parseGps(x.gps));
   return `<div class="tools"><div class="chips">${[["","🗂️ "+t("mapAll")],...ORDER.map(c=>[c,CATS[c].ic+" "+co(c)])].map(([k,l])=>`<button class="chip ${mapCat===k?"on":""}" onclick="APP.mapCat('${k}')">${l}</button>`).join("")}</div>
    <button class="bp" onclick="APP.near()">${t("nearMe")}</button></div>
-   <div id="map"></div>${all.length-withGps.length?`<div class="hint" style="margin-top:6px">ℹ️ ${t("noGps",{n:fmt(all.length-withGps.length)})}</div>`:""}<div id="nearList"></div>`;
+   <div id="nearList"></div><div id="map"></div>${all.length-withGps.length?`<div class="hint" style="margin-top:6px">ℹ️ ${t("noGps",{n:fmt(all.length-withGps.length)})}</div>`:""}`;
 }
 async function afterMap(){
   const el=$("#map");if(!el)return;
@@ -1233,14 +1233,20 @@ function drawMarkers(){
 }
 APP.mapCat=k=>{mapCat=k;document.querySelectorAll(".chip").forEach(b=>b.classList.toggle("on",b.getAttribute("onclick")===`APP.mapCat('${k}')`));drawMarkers()};
 APP.near=()=>{
-  const box=$("#nearList");box.innerHTML=`<div class="count" style="margin-top:10px">${t("nearWait")}</div>`;
+  const box=$("#nearList");box.innerHTML=`<div class="nearbox"><div class="count">${t("nearWait")}</div></div>`;
+  box.scrollIntoView({behavior:"smooth",block:"center"});
   navigator.geolocation.getCurrentPosition(p=>{
     const me2=[p.coords.latitude,p.coords.longitude];
     const d=(a,b)=>{const R=6371,r=Math.PI/180,dl=(b[0]-a[0])*r,dn=(b[1]-a[1])*r;const h=Math.sin(dl/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
     const list=allRows().filter(({c})=>!mapCat||c===mapCat).map(({c,x})=>{const g=parseGps(x.gps);return g?{c,x,km:d(me2,g)}:null}).filter(Boolean).sort((a,b)=>a.km-b.km).slice(0,10);
-    if(mapObj){mapObj.setView(me2,13);window.L.circleMarker(me2,{radius:9,color:"#fff",weight:3,fillColor:"#d23",fillOpacity:1}).addTo(mapLayer)}
-    box.innerHTML=`<div class="sech"><h3>${t("nearest")}</h3></div><div class="list">${list.map(({c,x,km})=>card(c,x,true).replace('<h3>',`<span class="km">${km<1?fmt(Math.round(km*1000))+" m":fmt(Math.round(km*10)/10)+" "+t("km")}</span><h3>`)).join("")||`<div class="empty">—</div>`}</div>`;
-  },()=>{box.innerHTML=`<div class="banner" style="margin-top:10px">${t("nearErr")}</div>`},{enableHighAccuracy:true,timeout:15000});
+    if(mapObj){window.L.circleMarker(me2,{radius:9,color:"#fff",weight:3,fillColor:"#d23",fillOpacity:1}).addTo(mapLayer);
+      const near3=list.slice(0,3).map(r=>parseGps(r.x.gps));
+      try{mapObj.fitBounds([me2,...near3],{padding:[40,40],maxZoom:15})}catch(e){mapObj.setView(me2,13)}
+      if(near3[0])window.L.polyline([me2,near3[0]],{color:"#d23",weight:3,dashArray:"6 8"}).addTo(mapLayer)}
+    box.innerHTML=list.length?`<div class="nearbox"><div class="sech" style="margin-top:0"><h3>📍 ${t("nearest")} (${fmt(list.length)})</h3></div><div class="list">${list.map(({c,x,km},i)=>`<div class="nr${i?"":" nr1"}">${i?"":`<div class="nrb">${L(["🥇 الأقرب إليك","🥇 Le plus proche"])}</div>`}${card(c,x,true).replace('<h3>',`<span class="km">${km<1?fmt(Math.round(km*1000))+" m":fmt(Math.round(km*10)/10)+" "+t("km")}</span><h3>`)}</div>`).join("")}</div></div>`
+      :`<div class="nearbox"><div class="empty">${L(["لا توجد مؤسسات مسجَّل موقعها في هذا التصنيف","Aucune institution géolocalisée dans cette catégorie"])}</div></div>`;
+    box.scrollIntoView({behavior:"smooth",block:"start"});
+  },()=>{box.innerHTML=`<div class="nearbox"><div class="banner">${t("nearErr")}</div></div>`;box.scrollIntoView({behavior:"smooth",block:"center"})},{enableHighAccuracy:true,timeout:15000});
 };
 
 /* ---------- الرسوم ---------- */
@@ -2526,7 +2532,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="56";
+const APP_VERSION="57";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
