@@ -736,7 +736,7 @@ function renderHome(){
 }
 // صفحة بحث مبسطة للزائر: خانة بحث، نوع المؤسسة، الإقليم، ثم زر واحد
 function topSearch(){
-  return `<div class="tsb"><input id="hs_q" placeholder="🔎 ${esc(L(["ابحث عن مؤسسة أو مكان…","Rechercher une institution ou un lieu…"]))}" onkeydown="if(event.key==='Enter')APP.hs()"><button class="bp" onclick="APP.hs()">${L(["بحث","OK"])}</button></div>`}
+  return `<div class="tsb"><input id="hs_q" placeholder="🔎 ${esc(L(["ابحث عن مؤسسة أو مكان…","Rechercher une institution ou un lieu…"]))}" onkeydown="if(event.key==='Enter')APP.hs()"><button class="bp" onclick="APP.hs()">${L(["بحث","OK"])}</button><button class="bs" onclick="APP.nearHome()" title="${esc(L(["الأقرب إليّ","Le plus proche"]))}">📍</button></div>`}
 APP.hs=()=>{const q=$("#hs_q").value;location.hash="stats";setTimeout(()=>{filt.q=q;render()},80)};
 function guestSearch(){
   const cats=ORDER.filter(c=>c!=="offices");
@@ -744,7 +744,9 @@ function guestSearch(){
    <input id="gs_q" placeholder="${esc(L(["اسم المؤسسة أو المكان…","Nom ou lieu…"]))}" style="font-size:17px;padding:14px" onkeydown="if(event.key==='Enter')APP.gs()">
    <div class="fg" style="margin-top:8px"><div><label>${L(["النوع","Type"])}</label><select id="gs_c">${cats.map(c=>`<option value="${c}">${CATS[c].ic} ${cl(c)}</option>`).join("")}</select></div>
    <div><label>${t("region")}</label><select id="gs_r"><option value="">${t("allRegions")}</option>${REGIONS.map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select></div></div>
-   <button class="bp" style="margin-top:12px;width:100%;padding:14px;font-size:17px" onclick="APP.gs()">🔎 ${L(["بحث","Rechercher"])}</button></div>`}
+   <button class="bp" style="margin-top:12px;width:100%;padding:14px;font-size:17px" onclick="APP.gs()">🔎 ${L(["بحث","Rechercher"])}</button>
+   <button class="bs" style="margin-top:8px;width:100%;padding:14px;font-size:17px" onclick="APP.nearHome()">📍 ${L(["الأقرب إليّ","Le plus proche de moi"])}</button></div>`}
+APP.nearHome=()=>{location.hash="map";setTimeout(()=>APP.near(),700)};
 APP.gs=()=>{const c=$("#gs_c").value,q=$("#gs_q").value,r=$("#gs_r").value;
   const go=()=>{filt.q=q;filt.region=r;filt.status="";filt.commune="";filt.city="";render()};
   if(view===c)go();else{location.hash=c;setTimeout(go,80)}};
@@ -2543,7 +2545,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="59";
+const APP_VERSION="60";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
