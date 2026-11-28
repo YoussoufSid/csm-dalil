@@ -518,7 +518,7 @@ let splashShown=false,_splashed=false;
 function gate(name){return new Promise(res=>{
   const g=document.createElement("div");g.id="gate";
   g.innerHTML=`<div class="g-img"></div><div class="g-shade"></div><img class="g-flag" src="mali-flag.svg" alt="علم مالي">
-   <div class="g-in"><div class="g-basm">${t("spBasm")}</div><div class="g-wel">${esc(name?t("spWelcomeName",{n:name}):t("spWelcome"))}</div><div class="g-app">${t("appName")}</div>
+   <div class="g-in"><div class="g-basm">${t("spBasm")}</div><div class="g-wel">${esc(t("spWelcome"))}</div><div class="g-app">${t("appName")}</div>${name?`<div class="g-name" dir="auto">${esc(name)}</div>`:""}
    <div class="g-orn">❁ ❁ ❁</div>
    <div class="g-ayah">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="g-ref">${esc(L(["سورة الحجر، الآية ٤٦","Sourate Al-Hijr, verset 46"]))}</div>
    <button class="g-go">${t("enterApp")}</button></div>`;
@@ -2547,7 +2547,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="67";
+const APP_VERSION="68";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
