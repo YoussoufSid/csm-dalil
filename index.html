@@ -598,7 +598,11 @@ body #auth .gst{min-height:48px;border-radius:14px}
  body .authwrap .hero .verse{font-size:22px}
  body #auth{padding:24px 18px}
 }
-@media (prefers-reduced-motion:no-preference){body .hero .img{animation:archin .9s cubic-bezier(.2,.7,.2,1) both}}
+body .hero.about .img{margin:0;outline:0;border-radius:0;box-shadow:none;min-height:300px;width:auto;animation:none}
+body .hero.about{align-items:stretch}
+body main{overflow-x:clip}
+@media (max-width:760px){body .hero.about .img{order:-1;min-height:150px;margin:0;width:auto}body .hero.about .tx{padding:20px}}
+@media (prefers-reduced-motion:no-preference){body .hero:not(.about) .img{animation:archin .9s cubic-bezier(.2,.7,.2,1) both}}
 @keyframes archin{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
 .qrn{font-weight:800;font-size:17px}.qrp{font-size:12px;color:#5b6b61}.qrk{font:700 13px monospace;color:#0f5132}.qrs{font-size:12px;color:#8a6a1c;font-weight:700}
 @media print{.qrg.per2 .qrl,.qrg.per4 .qrl{height:128mm}.qrg.per6 .qrl,.qrg.per9 .qrl{height:86mm}.qrl{box-sizing:border-box}}
