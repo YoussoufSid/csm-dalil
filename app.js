@@ -528,7 +528,6 @@ function gate(name){return new Promise(res=>{
 function splash(name){
   if(splashShown)return Promise.resolve(); splashShown=true;
   // الترحيب والبوابة مرة كل ١٢ ساعة على الجهاز، لا عند كل فتح للتطبيق
-  try{const last=+localStorage.getItem("csm-splash-at")||0;if(Date.now()-last<432e5)return Promise.resolve();localStorage.setItem("csm-splash-at",String(Date.now()))}catch(e){}
   return gate(name);
   return new Promise(res=>{
     const d=document.createElement("div");d.id="splash";
@@ -2548,7 +2547,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="65";
+const APP_VERSION="66";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
