@@ -719,7 +719,7 @@ function renderHome(){
   const S2=subs();
   const acts=`<div class="acts"><a class="gold" href="#stats">${t("explore")}</a>${canWrite()?`<button class="ghost" onclick="APP.pick()">${t("addInst")}</button>`:`<a class="ghost" href="#regions">🗺️ ${t("regions")}</a>`}</div>`;
   let h=heroHTML(acts);
-  if(me.role==="guest")return guestSearch()+h+homeNews();
+  if(me.role==="guest")return h+guestSearch()+homeNews();
   h=topSearch()+h;
   const pend=allRows().filter(({x})=>x.status!=="verified").length, pu=users.filter(u=>u.role==="pending").length;
   if(isAdmin()&&pu)h+=`<div class="banner" style="margin-top:14px">${t("usersBanner",{n:fmt(pu)})} — <a class="lnk" href="#users">${t("open")}</a></div>`;
@@ -740,7 +740,7 @@ function topSearch(){
 APP.hs=()=>{const q=$("#hs_q").value;location.hash="stats";setTimeout(()=>{filt.q=q;render()},80)};
 function guestSearch(){
   const cats=ORDER.filter(c=>c!=="offices");
-  return `<div class="sec" style="margin-top:14px"><h2>🔎 ${L(["ابحث في الدليل","Rechercher dans l'annuaire"])}</h2>
+  return `<div class="sec gsearch"><h2>🔎 ${L(["ابحث في الدليل","Rechercher dans l'annuaire"])}</h2>
    <input id="gs_q" placeholder="${esc(L(["اسم المؤسسة أو المكان…","Nom ou lieu…"]))}" style="font-size:17px;padding:14px" onkeydown="if(event.key==='Enter')APP.gs()">
    <div class="fg" style="margin-top:8px"><div><label>${L(["النوع","Type"])}</label><select id="gs_c">${cats.map(c=>`<option value="${c}">${CATS[c].ic} ${cl(c)}</option>`).join("")}</select></div>
    <div><label>${t("region")}</label><select id="gs_r"><option value="">${t("allRegions")}</option>${REGIONS.map(r=>`<option value="${r}">${esc(tv(r))}</option>`).join("")}</select></div></div>
@@ -2545,7 +2545,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="60";
+const APP_VERSION="61";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
