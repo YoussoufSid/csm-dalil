@@ -598,6 +598,16 @@ body #auth .gst{min-height:48px;border-radius:14px}
  body .authwrap .hero .verse{font-size:22px}
  body #auth{padding:24px 18px}
 }
+/* بوابة الترحيب: ألوان الهوية (أخضر وذهب) وإطار محراب */
+body #gate{background:#06281a}
+body #gate .g-img{filter:hue-rotate(-62deg) saturate(.7) brightness(.93)}
+body #gate .g-shade{background:linear-gradient(180deg,rgba(4,38,24,.4) 0%,rgba(4,38,24,0) 24%,rgba(4,38,24,0) 46%,rgba(3,30,19,.78) 76%,rgba(2,22,14,.96) 100%)}
+body #gate::after{content:"";position:absolute;inset:14px;border:2px solid rgba(230,199,118,.9);border-radius:999px 999px 22px 22px;pointer-events:none;z-index:3;animation:gin 1.4s .5s ease both}
+body #gate .g-flag{width:clamp(54px,12vw,76px);margin-left:calc(clamp(54px,12vw,76px)/-2);top:max(5vh,env(safe-area-inset-top,0px) + 30px);opacity:.9}
+body #gate .g-ayah{color:#fff4d6;font-size:clamp(30px,6vw,52px)}
+body #gate .g-ref{color:#e6c776}
+body #gate .g-go{background:linear-gradient(180deg,#f0d78f,#d4ae55);border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+@media (min-aspect-ratio:1/1){body #gate{background:radial-gradient(circle at 50% 38%,#145a3c,#04180f 74%)}body #gate::after{inset:16px calc(50% - 292px);border-radius:999px 999px 22px 22px}body #gate .g-img{box-shadow:0 0 90px 30px rgba(3,24,15,.75)}}
 body .hero.about .img{margin:0;outline:0;border-radius:0;box-shadow:none;min-height:300px;width:auto;animation:none}
 body .hero.about{align-items:stretch}
 body main{overflow-x:clip}
