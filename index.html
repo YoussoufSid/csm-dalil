@@ -604,9 +604,17 @@ body #gate .g-img{filter:hue-rotate(-62deg) saturate(.7) brightness(.93)}
 body #gate .g-shade{background:linear-gradient(180deg,rgba(4,38,24,.4) 0%,rgba(4,38,24,0) 24%,rgba(4,38,24,0) 46%,rgba(3,30,19,.78) 76%,rgba(2,22,14,.96) 100%)}
 body #gate::after{content:"";position:absolute;inset:14px;border:2px solid rgba(230,199,118,.9);border-radius:999px 999px 22px 22px;pointer-events:none;z-index:3;animation:gin 1.4s .5s ease both}
 body #gate .g-flag{width:clamp(54px,12vw,76px);margin-left:calc(clamp(54px,12vw,76px)/-2);top:max(5vh,env(safe-area-inset-top,0px) + 30px);opacity:.9}
-body #gate .g-ayah{color:#fff4d6;font-size:clamp(30px,6vw,52px)}
+body #gate .g-in{bottom:max(5vh,28px)}
+body #gate .g-basm{font-family:Amiri,serif;font-size:clamp(17px,3.2vw,24px);color:#e6c776;animation:gup 1s .3s ease both}
+body #gate .g-wel{font-family:Amiri,serif;font-weight:700;font-size:clamp(28px,7.4vw,50px);line-height:1.35;margin-top:4px;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.6);animation:gup 1s .5s ease both}
+body #gate .g-app{font-size:clamp(15px,3.6vw,21px);color:#fff4d6;margin-top:2px;font-weight:700;animation:gup 1s .7s ease both}
+body #gate .g-orn{color:#e6c776;letter-spacing:10px;margin:8px 0 4px;font-size:13px;animation:gup 1s .9s ease both}
+body #gate .g-ayah{color:#fff4d6;font-size:clamp(22px,5vw,38px);line-height:1.5;animation-delay:1.1s}
+body #gate .g-ref{margin:2px 0 14px;animation-delay:1.3s}
+body #gate .g-go{animation-delay:1.5s}
 body #gate .g-ref{color:#e6c776}
 body #gate .g-go{background:linear-gradient(180deg,#f0d78f,#d4ae55);border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+@media (min-aspect-ratio:1/1){body #gate .g-shade{background:linear-gradient(180deg,rgba(4,38,24,.4) 0%,rgba(4,38,24,0) 20%,rgba(4,38,24,0) 36%,rgba(3,30,19,.86) 64%,rgba(2,22,14,.97) 100%)}}
 @media (min-aspect-ratio:1/1){body #gate{background:radial-gradient(circle at 50% 38%,#145a3c,#04180f 74%)}body #gate::after{inset:16px calc(50% - 292px);border-radius:999px 999px 22px 22px}body #gate .g-img{box-shadow:0 0 90px 30px rgba(3,24,15,.75)}}
 body .hero.about .img{margin:0;outline:0;border-radius:0;box-shadow:none;min-height:300px;width:auto;animation:none}
 body .hero.about{align-items:stretch}

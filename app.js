@@ -515,18 +515,21 @@ Object.assign(S,{
 /* ================= شاشة الترحيب ================= */
 let splashShown=false,_splashed=false;
 // بوابة الدخول بعد الدعاء: ﴿ادخلوها بسلام آمنين﴾ ثم تنفتح البوابة إلى التطبيق
-function gate(){return new Promise(res=>{
+function gate(name){return new Promise(res=>{
   const g=document.createElement("div");g.id="gate";
   g.innerHTML=`<div class="g-img"></div><div class="g-shade"></div><img class="g-flag" src="mali-flag.svg" alt="علم مالي">
-   <div class="g-in"><div class="g-ayah">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="g-ref">${esc(L(["سورة الحجر، الآية ٤٦","Sourate Al-Hijr, verset 46"]))}</div>
+   <div class="g-in"><div class="g-basm">${t("spBasm")}</div><div class="g-wel">${esc(name?t("spWelcomeName",{n:name}):t("spWelcome"))}</div><div class="g-app">${t("appName")}</div>
+   <div class="g-orn">❁ ❁ ❁</div>
+   <div class="g-ayah">﴿ادْخُلُوهَا بِسَلَامٍ آمِنِينَ﴾</div><div class="g-ref">${esc(L(["سورة الحجر، الآية ٤٦","Sourate Al-Hijr, verset 46"]))}</div>
    <button class="g-go">${t("enterApp")}</button></div>`;
   document.body.appendChild(g);
   const go=()=>{if(g._c)return;g._c=1;g.classList.add("open");setTimeout(()=>{g.remove();res()},1100)};
-  g.querySelector(".g-go").onclick=go;g.querySelector(".g-img").onclick=go;setTimeout(go,7000)})}
+  g.querySelector(".g-go").onclick=go;g.querySelector(".g-img").onclick=go;setTimeout(go,14000)})}
 function splash(name){
   if(splashShown)return Promise.resolve(); splashShown=true;
   // الترحيب والبوابة مرة كل ١٢ ساعة على الجهاز، لا عند كل فتح للتطبيق
   try{const last=+localStorage.getItem("csm-splash-at")||0;if(Date.now()-last<432e5)return Promise.resolve();localStorage.setItem("csm-splash-at",String(Date.now()))}catch(e){}
+  return gate(name);
   return new Promise(res=>{
     const d=document.createElement("div");d.id="splash";
     d.innerHTML=`<div class="sp-bg"></div><div class="sp-stars">${"<i></i>".repeat(18)}</div>
@@ -2545,7 +2548,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="63";
+const APP_VERSION="64";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
