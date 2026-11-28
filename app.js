@@ -713,7 +713,7 @@ function summary(c,x){
 }
 function card(c,x,showCat){
   const v=x.status==="verified";
-  return `<div class="it ${v?"vok":"vpd"}" onclick="APP.detail('${c}','${esc(x.id)}')"><span class="st" title="${v?t("verified"):t("pending")}">${v?"✅":"🕓"}</span>${isFav(c,x.id)?'<span class="favm">⭐</span>':""}<h3>${esc(nameMain(x))}</h3>${nameSub(x)?`<div class="m" dir="auto">${esc(nameSub(x))}</div>`:""}${codeTag(x)}${locLine(x)?`<div class="m">📍 ${esc(locLine(x))}</div>`:""}${showCat?`<span class="tag cat">${CATS[c].ic} ${co(c)}</span>`:""}${summary(c,x).map((s,i)=>`<span class="tag ${i?"gd":""}">${esc(s)}</span>`).join("")}</div>`;
+  return `<div class="it ${v?"vok":"vpd"}" onclick="APP.detail('${c}','${esc(x.id)}')"><span class="st" title="${v?t("verified"):t("pending")}">${v?"✅":"🕓"}</span>${isFav(c,x.id)?'<span class="favm">⭐</span>':""}<span class="cic">${CATS[c].ic}</span><div class="cbd"><h3>${esc(nameMain(x))}</h3>${nameSub(x)?`<div class="m" dir="auto">${esc(nameSub(x))}</div>`:""}${codeTag(x)}${locLine(x)?`<div class="m">📍 ${esc(locLine(x))}</div>`:""}${showCat?`<span class="tag cat">${CATS[c].ic} ${co(c)}</span>`:""}${summary(c,x).map((s,i)=>`<span class="tag ${i?"gd":""}">${esc(s)}</span>`).join("")}</div></div>`;
 }
 
 /* ================= الصفحات ================= */
@@ -2547,7 +2547,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="71";
+const APP_VERSION="72";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
