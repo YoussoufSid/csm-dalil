@@ -652,7 +652,7 @@ function renderSide(){
   // مجموعتا «المزيد» و«الإدارة» مطويتان افتراضياً، وتنفتحان تلقائياً إن كانت الصفحة الحالية فيهما
   const det=(id,title,keys,inner)=>{if(!inner)return "";const on=navOpen[id]!==undefined?navOpen[id]:keys.includes(view);return `<details class="ngrp" ${on?"open":""} ontoggle="APP.nt('${id}',this.open)"><summary class="grp" style="cursor:pointer;list-style:none">${title} ▾</summary>${inner}</details>`};
   h+=det("more",t("gMore"),["howto","numbers","ask","about","privacy"],(guest?"":a("howto","📘",t("howT")))+(guest||deleg?"":a("numbers","🔢",t("numT")))+a("ask","🤖",t("askT"))+a("about","ℹ️",t("about"))+a("privacy","🔒",t("prvNav")));
-  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","unify","users","logs","settings"],(deleg?"":a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):""))+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash")):"")+(isAdmin()?a("cards","🪪",t("cardsT"),cards.length?`<span class="cnt">${fmt(cards.length)}</span>`:""):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT"))+a("unify","🔤",t("unT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
+  if(!guest)h+=det("adm",t("gAdmin"),["report","quick","import","dash","cards","monthly","reports","gaps","mrep","unify","users","logs","settings"],(deleg?"":a("report","📄",t("report"))+(canWrite()&&me.role!=="guest"?a("quick","⚡",t("qkT"))+a("import","📥",t("import")):""))+(isAdmin()||isRegAdmin()?a("dash","📈",t("dash")):"")+(canReport()?a("monthly","🗓️",t("mrT")):"")+((isAdmin()||isRegAdmin())?a("reports","🚩",t("repsT"),reportsNew()?`<span class="cnt">${fmt(reportsNew())}</span>`:"")+a("gaps","📋",t("gapsT"))+a("mrep","🗓️",t("mrepT"))+a("unify","🔤",t("unT")):"")+(isAdmin()?a("users","👥",t("users"),pu?'<span class="dot"></span>':"")+a("logs","📜",t("logs"))+a("settings","⚙️",t("settings")):""));
   $("#nav").innerHTML=h;
   const rl=me.role==="guest"?t("rGuest"):me.owner?"👑 "+t("ownerL"):isAdmin()?t("rAdmin"):isRegAdmin()?"🛡️ "+L(ROLES.regadmin)+" · "+tv(me.region||""):canWrite()?t("rContrib"):t("rViewer");
   $("#who").innerHTML=`<b>${esc(me.name||"")}</b>${rl}`;
@@ -2031,7 +2031,7 @@ function renderBnav(){const el=$("#bnav");if(!el||!me)return;
   const it=(k,ic,l)=>`<a href="#${k}" class="${view===k?"on":""}"><span>${ic}</span><small>${l}</small></a>`;
   el.innerHTML=it("home","🏠",t("home"))+it("mosques",CATS.mosques.ic,cl("mosques"))+
     (canOffices()?it("offices",CATS.offices.ic,L(["المكاتب","Bureaux"])):it("map","📍",t("map")))+
-    (isAdmin()?it("cards","🪪",t("cardsT")):it("favs","⭐",t("favs")))+
+    it("favs","⭐",t("favs"))+
     `<a href="javascript:void 0" onclick="document.body.classList.toggle('open')"><span>☰</span><small>${t("bnMenu")}</small></a>`}
 // إغلاق القائمة الجانبية عند اختيار صفحة على الهاتف
 addEventListener("hashchange",()=>document.body.classList.remove("open"));
@@ -2547,7 +2547,7 @@ APP.newsDel=async id=>{if(await ask(t("newsDelAsk"))){store.delNews(id);toast(t(
    - يتحقق التطبيق من وجود نسخة جديدة عند الفتح، وعند الرجوع إليه، وكل 20 دقيقة.
    - إن وُجدت: يتحدّث تلقائياً إن لم يكن المستخدم يكتب في نموذج، وإلا يظهر شريط «تحديث الآن».
    - زر «🔄 تحديث التطبيق» في القائمة يفرض أحدث نسخة فوراً. */
-const APP_VERSION="70";
+const APP_VERSION="71";
 Object.assign(S,{
  updAvail:["✨ يتوفر تحديث جديد للتطبيق","✨ Une nouvelle version est disponible"],updNow:["تحديث الآن","Mettre à jour"],
  updBtn:["🔄 تحديث التطبيق","🔄 Mettre à jour l'app"],updDone:["✅ تم تحديث التطبيق إلى الإصدار {v}","✅ Application mise à jour (version {v})"],
